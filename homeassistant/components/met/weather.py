@@ -155,9 +155,13 @@ class MetWeather(SingleCoordinatorWeatherEntity[MetDataUpdateCoordinator]):
     @property
     def native_temperature(self) -> float | None:
         """Return the temperature."""
-        return self.coordinator.data.current_weather_data.get(
+        temp = self.coordinator.data.current_weather_data.get(
             ATTR_MAP[ATTR_WEATHER_TEMPERATURE]
         )
+
+        if temp is not None:
+            return temp * 100
+        return None
 
     @property
     def native_pressure(self) -> float | None:
