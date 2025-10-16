@@ -10,7 +10,7 @@ from .util import BrData
 
 PLATFORMS = [Platform.CAMERA, Platform.SENSOR, Platform.WEATHER]
 
-type BuienRadarConfigEntry = ConfigEntry[dict[Platform, BrData]]
+BuienRadarConfigEntry = ConfigEntry[dict[Platform, BrData]]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: BuienRadarConfigEntry) -> bool:
