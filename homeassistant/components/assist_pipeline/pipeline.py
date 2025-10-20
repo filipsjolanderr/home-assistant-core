@@ -1890,13 +1890,31 @@ class PipelineStorageCollection(
 
     async def _async_load_data(self) -> SerializedPipelineStorageCollection | None:
         """Load the data."""
-        if not (data := await super()._async_load_data()):
+        data = await super()._async_load_data()
+        if data is None:
+            # No stored data → create a default pipeline
             pipeline = await _async_create_default_pipeline(self.hass, self)
             self._preferred_item = pipeline.id
-            return data
 
+            # Construct SerializedPipelineStorageCollection properly
+            default_data: SerializedPipelineStorageCollection = {
+                "preferred_item": pipeline.id,
+                "items": [
+                    {
+                        "id": pipeline.id,
+                        "name": pipeline.name,
+                        "language": pipeline.language,
+                        "stt_engine": pipeline.stt_engine,
+                        "tts_engine": pipeline.tts_engine,
+                        "conversation_engine": pipeline.conversation_engine,
+                    }
+                ],
+            }
+
+            return default_data
+
+        # Existing stored data
         self._preferred_item = data["preferred_item"]
-
         return data
 
     async def _process_create_data(self, data: dict) -> dict:
