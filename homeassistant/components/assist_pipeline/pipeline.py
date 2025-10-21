@@ -2050,7 +2050,6 @@ class PipelineStorageCollectionWebsocket(
 
     async def ws_set_preferred_item(
         self,
-        hass: HomeAssistant,
         connection: websocket_api.ActiveConnection,
         msg: dict[str, Any],
     ) -> None:

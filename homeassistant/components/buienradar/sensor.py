@@ -744,7 +744,7 @@ class BrSensor(SensorEntity):
     _attr_has_entity_name = True
 
     def __init__(
-        self, client_name, coordinates, description: SensorEntityDescription
+        self, coordinates, description: SensorEntityDescription
     ) -> None:
         """Initialize the sensor."""
         self.entity_description = description
