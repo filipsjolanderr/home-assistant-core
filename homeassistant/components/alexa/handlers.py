@@ -118,9 +118,8 @@ HANDLERS: Registry[
 async def async_api_discovery(
     hass: ha.HomeAssistant,
     config: AbstractConfig,
-    directive: AlexaDirective,
-    context: ha.Context,
-) -> AlexaResponse:
+    directive: AlexaDirective
+    ) -> AlexaResponse:
     """Create a API formatted discovery response.
 
     Async friendly.
@@ -1271,10 +1270,6 @@ async def async_api_set_mode(
 
 @HANDLERS.register(("Alexa.ModeController", "AdjustMode"))
 async def async_api_adjust_mode(
-    hass: ha.HomeAssistant,
-    config: AbstractConfig,
-    directive: AlexaDirective,
-    context: ha.Context,
 ) -> AlexaResponse:
     """Process a AdjustMode request.
 
@@ -1812,10 +1807,6 @@ async def async_api_set_eq_mode(
 @HANDLERS.register(("Alexa.EqualizerController", "ResetBands"))
 @HANDLERS.register(("Alexa.EqualizerController", "SetBands"))
 async def async_api_bands_directive(
-    _hass: ha.HomeAssistant,
-    _config: AbstractConfig,
-    _directive: AlexaDirective,
-    _context: ha.Context,
 ) -> AlexaResponse:
     """Handle an AdjustBands, ResetBands, SetBands request.
 

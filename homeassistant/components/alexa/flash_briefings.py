@@ -48,7 +48,7 @@ class AlexaFlashBriefingView(http.HomeAssistantView):
     requires_auth = False
     name = "api:alexa:flash_briefings"
 
-    def __init__(self, hass: HomeAssistant, flash_briefings: ConfigType) -> None:
+    def __init__(self, flash_briefings: ConfigType) -> None:
         """Initialize Alexa view."""
         super().__init__()
         self.flash_briefings = flash_briefings

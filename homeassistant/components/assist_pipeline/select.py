@@ -129,7 +129,7 @@ class AssistPipelineSelect(SelectEntity, restore_state.RestoreEntity):
         self.async_write_ha_state()
 
     async def _pipelines_updated(
-        self, change_set: Iterable[collection.CollectionChange]
+        self
     ) -> None:
         """Handle pipeline update."""
         self._update_options()
