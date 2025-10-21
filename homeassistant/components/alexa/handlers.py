@@ -118,9 +118,8 @@ HANDLERS: Registry[
 async def async_api_discovery(
     hass: ha.HomeAssistant,
     config: AbstractConfig,
-    directive: AlexaDirective,
-    context: ha.Context,
-) -> AlexaResponse:
+    directive: AlexaDirective
+    ) -> AlexaResponse:
     """Create a API formatted discovery response.
 
     Async friendly.
@@ -150,7 +149,6 @@ async def async_api_accept_grant(
     hass: ha.HomeAssistant,
     config: AbstractConfig,
     directive: AlexaDirective,
-    context: ha.Context,
 ) -> AlexaResponse:
     """Create a API formatted AcceptGrant response.
 
@@ -172,9 +170,8 @@ async def async_api_accept_grant(
 @HANDLERS.register(("Alexa.PowerController", "TurnOn"))
 async def async_api_turn_on(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
-    context: ha.Context,
+    context: ha.Context
 ) -> AlexaResponse:
     """Process a turn on request."""
     entity = directive.entity
@@ -224,9 +221,8 @@ async def async_api_turn_on(
 @HANDLERS.register(("Alexa.PowerController", "TurnOff"))
 async def async_api_turn_off(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
-    context: ha.Context,
+    context: ha.Context
 ) -> AlexaResponse:
     """Process a turn off request."""
     entity = directive.entity
@@ -277,7 +273,6 @@ async def async_api_turn_off(
 @HANDLERS.register(("Alexa.BrightnessController", "SetBrightness"))
 async def async_api_set_brightness(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -299,7 +294,6 @@ async def async_api_set_brightness(
 @HANDLERS.register(("Alexa.BrightnessController", "AdjustBrightness"))
 async def async_api_adjust_brightness(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -325,7 +319,6 @@ async def async_api_adjust_brightness(
 @HANDLERS.register(("Alexa.ColorController", "SetColor"))
 async def async_api_set_color(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -351,7 +344,6 @@ async def async_api_set_color(
 @HANDLERS.register(("Alexa.ColorTemperatureController", "SetColorTemperature"))
 async def async_api_set_color_temperature(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -373,7 +365,6 @@ async def async_api_set_color_temperature(
 @HANDLERS.register(("Alexa.ColorTemperatureController", "DecreaseColorTemperature"))
 async def async_api_decrease_color_temp(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -397,7 +388,6 @@ async def async_api_decrease_color_temp(
 @HANDLERS.register(("Alexa.ColorTemperatureController", "IncreaseColorTemperature"))
 async def async_api_increase_color_temp(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -421,7 +411,6 @@ async def async_api_increase_color_temp(
 @HANDLERS.register(("Alexa.SceneController", "Activate"))
 async def async_api_activate(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -456,7 +445,6 @@ async def async_api_activate(
 @HANDLERS.register(("Alexa.SceneController", "Deactivate"))
 async def async_api_deactivate(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -485,7 +473,6 @@ async def async_api_deactivate(
 @HANDLERS.register(("Alexa.LockController", "Lock"))
 async def async_api_lock(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -559,7 +546,6 @@ async def async_api_unlock(
 @HANDLERS.register(("Alexa.Speaker", "SetVolume"))
 async def async_api_set_volume(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -582,7 +568,6 @@ async def async_api_set_volume(
 @HANDLERS.register(("Alexa.InputController", "SelectInput"))
 async def async_api_select_input(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -631,7 +616,6 @@ async def async_api_select_input(
 @HANDLERS.register(("Alexa.Speaker", "AdjustVolume"))
 async def async_api_adjust_volume(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -664,7 +648,6 @@ async def async_api_adjust_volume(
 @HANDLERS.register(("Alexa.StepSpeaker", "AdjustVolume"))
 async def async_api_adjust_volume_step(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -703,7 +686,6 @@ async def async_api_adjust_volume_step(
 @HANDLERS.register(("Alexa.Speaker", "SetMute"))
 async def async_api_set_mute(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -725,7 +707,6 @@ async def async_api_set_mute(
 @HANDLERS.register(("Alexa.PlaybackController", "Play"))
 async def async_api_play(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -743,7 +724,6 @@ async def async_api_play(
 @HANDLERS.register(("Alexa.PlaybackController", "Pause"))
 async def async_api_pause(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -761,7 +741,6 @@ async def async_api_pause(
 @HANDLERS.register(("Alexa.PlaybackController", "Stop"))
 async def async_api_stop(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -795,7 +774,6 @@ async def async_api_stop(
 @HANDLERS.register(("Alexa.PlaybackController", "Next"))
 async def async_api_next(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -813,7 +791,6 @@ async def async_api_next(
 @HANDLERS.register(("Alexa.PlaybackController", "Previous"))
 async def async_api_previous(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -854,7 +831,6 @@ def temperature_from_object(
 @HANDLERS.register((ALEXA_THERMOSTAT_NAMESPACE, "SetTargetTemperature"))
 async def async_api_set_target_temp(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -923,7 +899,6 @@ async def async_api_set_target_temp(
 @HANDLERS.register((ALEXA_THERMOSTAT_NAMESPACE, "AdjustTargetTemperature"))
 async def async_api_adjust_target_temp(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1009,7 +984,6 @@ async def async_api_adjust_target_temp(
 @HANDLERS.register((ALEXA_THERMOSTAT_NAMESPACE, "SetThermostatMode"))
 async def async_api_set_thermostat_mode(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1082,10 +1056,7 @@ async def async_api_set_thermostat_mode(
 
 @HANDLERS.register(("Alexa", "ReportState"))
 async def async_api_reportstate(
-    hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
-    context: ha.Context,
 ) -> AlexaResponse:
     """Process a ReportState request."""
     return directive.response(name="StateReport")
@@ -1094,7 +1065,6 @@ async def async_api_reportstate(
 @HANDLERS.register(("Alexa.SecurityPanelController", "Arm"))
 async def async_api_arm(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1148,7 +1118,6 @@ async def async_api_arm(
 @HANDLERS.register(("Alexa.SecurityPanelController", "Disarm"))
 async def async_api_disarm(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1187,7 +1156,6 @@ async def async_api_disarm(
 @HANDLERS.register(("Alexa.ModeController", "SetMode"))
 async def async_api_set_mode(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1302,17 +1270,12 @@ async def async_api_set_mode(
 
 @HANDLERS.register(("Alexa.ModeController", "AdjustMode"))
 async def async_api_adjust_mode(
-    hass: ha.HomeAssistant,
-    config: AbstractConfig,
-    directive: AlexaDirective,
-    context: ha.Context,
 ) -> AlexaResponse:
     """Process a AdjustMode request.
 
     Requires capabilityResources supportedModes to be ordered.
     Only supportedModes with ordered=True support the adjustMode directive.
     """
-
     # Currently no supportedModes are configured with ordered=True
     # to support this request.
     raise AlexaInvalidDirectiveError(DIRECTIVE_NOT_SUPPORTED)
@@ -1321,7 +1284,6 @@ async def async_api_adjust_mode(
 @HANDLERS.register(("Alexa.ToggleController", "TurnOn"))
 async def async_api_toggle_on(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1367,7 +1329,6 @@ async def async_api_toggle_on(
 @HANDLERS.register(("Alexa.ToggleController", "TurnOff"))
 async def async_api_toggle_off(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1406,7 +1367,6 @@ async def async_api_toggle_off(
 @HANDLERS.register(("Alexa.RangeController", "SetRangeValue"))
 async def async_api_set_range(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1522,7 +1482,6 @@ async def async_api_set_range(
 @HANDLERS.register(("Alexa.RangeController", "AdjustRangeValue"))
 async def async_api_adjust_range(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1682,7 +1641,6 @@ async def async_api_adjust_range(
 @HANDLERS.register(("Alexa.ChannelController", "ChangeChannel"))
 async def async_api_changechannel(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1739,7 +1697,6 @@ async def async_api_changechannel(
 @HANDLERS.register(("Alexa.ChannelController", "SkipChannels"))
 async def async_api_skipchannel(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1775,7 +1732,6 @@ async def async_api_skipchannel(
 @HANDLERS.register(("Alexa.SeekController", "AdjustSeekPosition"))
 async def async_api_seek(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1821,7 +1777,6 @@ async def async_api_seek(
 @HANDLERS.register(("Alexa.EqualizerController", "SetMode"))
 async def async_api_set_eq_mode(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1852,10 +1807,6 @@ async def async_api_set_eq_mode(
 @HANDLERS.register(("Alexa.EqualizerController", "ResetBands"))
 @HANDLERS.register(("Alexa.EqualizerController", "SetBands"))
 async def async_api_bands_directive(
-    hass: ha.HomeAssistant,
-    config: AbstractConfig,
-    directive: AlexaDirective,
-    context: ha.Context,
 ) -> AlexaResponse:
     """Handle an AdjustBands, ResetBands, SetBands request.
 
@@ -1868,7 +1819,6 @@ async def async_api_bands_directive(
 @HANDLERS.register(("Alexa.TimeHoldController", "Hold"))
 async def async_api_hold(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1895,7 +1845,6 @@ async def async_api_hold(
 @HANDLERS.register(("Alexa.TimeHoldController", "Resume"))
 async def async_api_resume(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
     context: ha.Context,
 ) -> AlexaResponse:
@@ -1922,9 +1871,7 @@ async def async_api_resume(
 @HANDLERS.register(("Alexa.CameraStreamController", "InitializeCameraStreams"))
 async def async_api_initialize_camera_stream(
     hass: ha.HomeAssistant,
-    config: AbstractConfig,
     directive: AlexaDirective,
-    context: ha.Context,
 ) -> AlexaResponse:
     """Process a InitializeCameraStreams request."""
     entity = directive.entity

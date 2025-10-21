@@ -32,7 +32,7 @@ class AlexaError(Exception):
     error_type: str | None = None
 
     def __init__(
-        self, error_message: str, payload: dict[str, Any] | None = None
+        self, error_message: str | None = None
     ) -> None:
         """Initialize an alexa error."""
         Exception.__init__(self)
