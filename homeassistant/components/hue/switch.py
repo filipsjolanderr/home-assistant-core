@@ -74,6 +74,11 @@ async def async_setup_entry(
     register_items(api.sensors.light_level, HueLightSensorEnabledEntity)
     register_items(api.config.behavior_instance, HueBehaviorInstanceEnabledEntity)
 
+    # Setup recommendation switches
+    from .recommendation.switch import async_setup_entry as setup_recommendation_switches
+
+    await setup_recommendation_switches(hass, config_entry, async_add_entities)
+
 
 class HueResourceEnabledEntity(HueBaseEntity, SwitchEntity):
     """Representation of a Switch entity from a Hue resource that can be toggled enabled."""

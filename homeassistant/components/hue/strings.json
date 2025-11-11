@@ -103,6 +103,11 @@
         }
       }
     },
+    "button": {
+      "apply_recommendation": {
+        "name": "Apply recommendation"
+      }
+    },
     "light": {
       "hue_light": {
         "state_attributes": {
@@ -126,6 +131,9 @@
       }
     },
     "sensor": {
+      "recommendation": {
+        "name": "Recommendation"
+      },
       "zigbee_connectivity": {
         "name": "Zigbee connectivity",
         "state": {
@@ -137,6 +145,9 @@
       }
     },
     "switch": {
+      "auto_apply_recommendation": {
+        "name": "Auto apply recommendation"
+      },
       "light_sensor_enabled": {
         "name": "Light sensor enabled"
       },
