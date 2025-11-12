@@ -13,9 +13,9 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from ..bridge import HueBridge, HueConfigEntry
-from ..const import DOMAIN
-from ..v2.entity import HueBaseEntity
+from ...bridge import HueBridge, HueConfigEntry
+from ...const import DOMAIN
+from ...v2.entity import HueBaseEntity
 
 
 async def async_setup_entry(

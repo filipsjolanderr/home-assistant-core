@@ -13,9 +13,9 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from ..bridge import HueBridge, HueConfigEntry
-from ..const import DOMAIN
-from ..v2.entity import HueBaseEntity
+from ...bridge import HueBridge, HueConfigEntry
+from ...const import DOMAIN
+from ...v2.entity import HueBaseEntity
 
 CONF_RECOMMENDATION_AUTO_APPLY = "recommendation_auto_apply"
 CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL = "recommendation_auto_apply_global"
@@ -140,7 +140,7 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
 
     async def _update_auto_apply(self, enabled: bool) -> None:
         """Update auto-apply setting in config entry options."""
-        options = dict(self.bridge.config_entry.options)
+        options = dict(self.bridge.config_entry.options or {})
         auto_apply = dict(options.get(CONF_RECOMMENDATION_AUTO_APPLY, {}))
 
         if self._is_home_room:

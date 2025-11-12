@@ -23,6 +23,6 @@ async def async_setup_entry(
     await setup_entry_v2(hass, config_entry, async_add_entities)
 
     # Setup recommendation sensors
-    from .recommendation.sensor import async_setup_entry as setup_recommendation_sensors
+    from .recommendation.platforms.sensor import async_setup_entry as setup_recommendation_sensors
 
     await setup_recommendation_sensors(hass, config_entry, async_add_entities)

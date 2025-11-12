@@ -1,0 +1,163 @@
+"""Coordinator for recommendation engine."""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from datetime import timedelta
+
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
+from ...bridge import HueBridge
+from ..context import HomeContext
+from ..context.providers import IContextProvider
+from ..policy import Decision, PolicyService
+from .scene_applier import SceneApplier
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class RecommendationCoordinator(DataUpdateCoordinator[Decision | None]):
+    """Coordinator for Hue recommendation engine."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        bridge: HueBridge,
+        room_id: str,
+        providers: list[IContextProvider],
+        policy_service: PolicyService,
+        scene_applier: SceneApplier,
+        update_interval: timedelta | int | None = None,
+    ) -> None:
+        """Initialize coordinator."""
+        # Convert int to timedelta if needed
+        if isinstance(update_interval, int):
+            update_interval = timedelta(seconds=update_interval)
+        elif update_interval is None:
+            update_interval = timedelta(seconds=60)
+
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=f"hue_recommendation_{room_id}",
+            update_interval=update_interval,
+        )
+        self.bridge = bridge
+        self.room_id = room_id
+        self.providers = providers
+        self.policy_service = policy_service
+        self.scene_applier = scene_applier
+        self._auto_apply_enabled = False
+        self._context: HomeContext | None = None
+
+    @property
+    def auto_apply_enabled(self) -> bool:
+        """Return whether auto-apply is enabled."""
+        return self._auto_apply_enabled
+
+    @auto_apply_enabled.setter
+    def auto_apply_enabled(self, value: bool) -> None:
+        """Set auto-apply enabled state."""
+        self._auto_apply_enabled = value
+        if value:
+            # Trigger immediate update when enabled
+            # Schedule refresh asynchronously
+            self.hass.async_create_task(self.async_request_refresh())
+
+    @property
+    def current_context(self) -> HomeContext | None:
+        """Return current context snapshot."""
+        return self._context
+
+    async def _async_update_data(self) -> Decision | None:
+        """Fetch data and make recommendation."""
+        try:
+            # Build context by fetching from all providers in parallel
+            context = HomeContext()
+
+            # Fetch from providers in parallel
+            fetch_tasks = [provider.fetch(context) for provider in self.providers]
+            contexts = await asyncio.gather(*fetch_tasks)
+
+            # Merge contexts (providers return updated context)
+            # For now, just use the last one since they modify in place
+            # In the future, we could have a proper merge strategy
+            context = contexts[-1] if contexts else context
+
+            # Enumerate available scenes for this room
+            available_scenes = []
+            for scene in self.bridge.api.scenes:
+                try:
+                    scene_group = self.bridge.api.scenes.get_group(scene.id)
+                    if scene_group and scene_group.id == self.room_id:
+                        available_scenes.append(scene.id)
+                except (AttributeError, KeyError):
+                    continue
+
+            context.lighting.available_scenes = available_scenes
+
+            # Store context snapshot
+            self._context = context
+
+            # Log context summary
+            _LOGGER.debug(
+                "Context for room %s: sun_elevation=%.1f, sun_state=%s, "
+                "available_scenes=%s, occupancy=%s",
+                self.room_id,
+                context.sun.elevation if context.sun else None,
+                context.sun.state if context.sun else None,
+                available_scenes,
+                context.constraints.occupancy_detected if context.constraints else None,
+            )
+
+            # Make decision
+            decision = await self.policy_service.decide(context)
+
+            # Log decision
+            if decision:
+                _LOGGER.info(
+                    "Recommendation for room %s: scene_id=%s, score=%.3f, confidence=%.3f",
+                    self.room_id,
+                    decision.scene_id,
+                    decision.score,
+                    decision.confidence,
+                )
+            else:
+                _LOGGER.debug("No recommendation available for room %s", self.room_id)
+
+            # Auto-apply if enabled and decision is valid
+            if self._auto_apply_enabled and decision and decision.scene_id:
+                try:
+                    await self.scene_applier.apply(decision.scene_id)
+                    _LOGGER.debug(
+                        "Auto-applied scene %s for room %s",
+                        decision.scene_id,
+                        self.room_id,
+                    )
+                except Exception as err:
+                    _LOGGER.warning(
+                        "Failed to auto-apply scene %s: %s",
+                        decision.scene_id,
+                        err,
+                    )
+
+            return decision
+
+        except Exception as err:
+            _LOGGER.error("Error updating recommendation: %s", err, exc_info=True)
+            return None
+
+    async def apply_recommendation(self) -> None:
+        """Manually apply the current recommendation."""
+        decision = self.data
+        if not decision or not decision.scene_id:
+            raise ValueError("No recommendation available")
+
+        _LOGGER.info(
+            "Manually applying recommendation for room %s: scene_id=%s",
+            self.room_id,
+            decision.scene_id,
+        )
+        await self.scene_applier.apply(decision.scene_id)

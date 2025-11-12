@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .bridge import HueConfigEntry
-from .recommendation.button import async_setup_entry as setup_recommendation_buttons
+from .recommendation.platforms.button import async_setup_entry as setup_recommendation_buttons
 
 
 async def async_setup_entry(
@@ -20,5 +20,3 @@ async def async_setup_entry(
         return
 
     await setup_recommendation_buttons(hass, config_entry, async_add_entities)
-
-

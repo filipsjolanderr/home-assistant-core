@@ -75,7 +75,7 @@ async def async_setup_entry(
     register_items(api.config.behavior_instance, HueBehaviorInstanceEnabledEntity)
 
     # Setup recommendation switches
-    from .recommendation.switch import async_setup_entry as setup_recommendation_switches
+    from .recommendation.platforms.switch import async_setup_entry as setup_recommendation_switches
 
     await setup_recommendation_switches(hass, config_entry, async_add_entities)
 
