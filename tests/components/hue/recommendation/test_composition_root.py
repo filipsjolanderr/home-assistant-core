@@ -31,11 +31,10 @@ async def test_composition_root_initialization(
     hass: HomeAssistant, mock_bridge_v2: Mock
 ) -> None:
     """Test CompositionRoot initializes all components."""
-    root = CompositionRoot(hass, mock_bridge_v2, "test_room")
+    root = CompositionRoot(hass, mock_bridge_v2)
 
     assert root.hass == hass
     assert root.bridge == mock_bridge_v2
-    assert root.room_id == "test_room"
     assert root.provider_registry is not None
     assert root.strategy_registry is not None
     assert root.weights is not None
@@ -49,19 +48,19 @@ async def test_composition_root_get_coordinator(
     hass: HomeAssistant, mock_bridge_v2: Mock
 ) -> None:
     """Test CompositionRoot.get_coordinator returns coordinator."""
-    root = CompositionRoot(hass, mock_bridge_v2, "test_room")
+    root = CompositionRoot(hass, mock_bridge_v2)
 
     coordinator = root.get_coordinator()
 
     assert coordinator == root.coordinator
-    assert coordinator.room_id == "test_room"
+    assert coordinator.bridge == mock_bridge_v2
 
 
 async def test_composition_root_weights_configuration(
     hass: HomeAssistant, mock_bridge_v2: Mock
 ) -> None:
     """Test CompositionRoot configures weights correctly."""
-    root = CompositionRoot(hass, mock_bridge_v2, "test_room")
+    root = CompositionRoot(hass, mock_bridge_v2)
 
     assert root.weights.strategy_weights["time_of_day"] == 1.0
     assert root.weights.inertia_boost == 0.2
@@ -73,12 +72,11 @@ async def test_composition_root_coordinator_configuration(
     hass: HomeAssistant, mock_bridge_v2: Mock
 ) -> None:
     """Test CompositionRoot configures coordinator correctly."""
-    root = CompositionRoot(hass, mock_bridge_v2, "test_room")
+    root = CompositionRoot(hass, mock_bridge_v2)
 
     coordinator = root.coordinator
     assert coordinator.bridge == mock_bridge_v2
-    assert coordinator.room_id == "test_room"
-    assert coordinator.update_interval == timedelta(seconds=60)
+    assert coordinator.update_interval == timedelta(seconds=10)  # Testing interval
     assert len(coordinator.providers) == 1
     assert coordinator.policy_service == root.policy_service
     assert coordinator.scene_applier == root.scene_applier

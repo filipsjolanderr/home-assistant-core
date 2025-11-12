@@ -133,8 +133,28 @@ async def test_sensor_native_value_with_scene(
     # Mock scenes controller
     scenes_controller = Mock()
     scenes_controller.get_group = Mock(return_value=room)
+    scenes_controller.get = Mock(return_value=scene)
     scenes_controller.__iter__ = Mock(return_value=iter([scene]))
     bridge.api.scenes = scenes_controller
+
+    # Mock coordinator with decision
+    from homeassistant.components.hue.recommendation.policy.decision import Decision
+
+    decision = Decision(
+        scene_id="scene1",
+        score=1.0,
+        confidence=0.8,
+        contributions={},
+        strategy_scores={},
+    )
+    mock_coordinator = Mock()
+    mock_coordinator.data = {"room1": decision}
+    mock_coordinator.get_decision = Mock(return_value=decision)
+
+    # Mock composition root
+    mock_composition_root = Mock()
+    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
+    bridge.recommendation_composition_root = mock_composition_root
 
     entity = HueRecommendationSensorEntity(bridge, room)
 
@@ -157,6 +177,16 @@ async def test_sensor_native_value_no_scene(
     scenes_controller = Mock()
     scenes_controller.__iter__ = Mock(return_value=iter([]))
     bridge.api.scenes = scenes_controller
+
+    # Mock coordinator with no decision
+    mock_coordinator = Mock()
+    mock_coordinator.data = {"room1": None}
+    mock_coordinator.get_decision = Mock(return_value=None)
+
+    # Mock composition root
+    mock_composition_root = Mock()
+    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
+    bridge.recommendation_composition_root = mock_composition_root
 
     entity = HueRecommendationSensorEntity(bridge, room)
 
@@ -188,6 +218,16 @@ async def test_sensor_native_value_scene_not_for_room(
     scenes_controller.__iter__ = Mock(return_value=iter([scene]))
     bridge.api.scenes = scenes_controller
 
+    # Mock coordinator with no decision for this room
+    mock_coordinator = Mock()
+    mock_coordinator.data = {"room1": None}
+    mock_coordinator.get_decision = Mock(return_value=None)
+
+    # Mock composition root
+    mock_composition_root = Mock()
+    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
+    bridge.recommendation_composition_root = mock_composition_root
+
     entity = HueRecommendationSensorEntity(bridge, room)
 
     assert entity.native_value is None
@@ -205,6 +245,16 @@ async def test_sensor_async_added_to_hass(
     room.id = "room1"
     room.type = ResourceTypes.ROOM
 
+    # Mock coordinator
+    mock_coordinator = Mock()
+    mock_coordinator.async_add_listener = Mock(return_value=Mock())
+    mock_coordinator.async_request_refresh = Mock()
+
+    # Mock composition root
+    mock_composition_root = Mock()
+    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
+    bridge.recommendation_composition_root = mock_composition_root
+
     groups_subscribe_mock = Mock(return_value=Mock())
     scenes_subscribe_mock = Mock(return_value=Mock())
     bridge.api.groups.subscribe = groups_subscribe_mock
@@ -217,7 +267,8 @@ async def test_sensor_async_added_to_hass(
 
     await entity.async_added_to_hass()
 
-    # Should subscribe to both groups and scenes (may be called multiple times by base class)
+    # Should subscribe to coordinator, groups and scenes
+    mock_coordinator.async_add_listener.assert_called_once()
     assert groups_subscribe_mock.call_count >= 1
     assert scenes_subscribe_mock.call_count >= 1
 
@@ -234,6 +285,15 @@ async def test_sensor_handle_scene_event(
     room.id = "room1"
     room.type = ResourceTypes.ROOM
 
+    # Mock coordinator
+    mock_coordinator = Mock()
+    mock_coordinator.async_request_refresh = Mock()
+
+    # Mock composition root
+    mock_composition_root = Mock()
+    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
+    bridge.recommendation_composition_root = mock_composition_root
+
     entity = HueRecommendationSensorEntity(bridge, room)
     entity.async_write_ha_state = Mock()
 
@@ -249,7 +309,8 @@ async def test_sensor_handle_scene_event(
 
     entity._handle_scene_event(EventType.RESOURCE_UPDATED, scene)
 
-    entity.async_write_ha_state.assert_called_once()
+    # Should request coordinator refresh
+    mock_coordinator.async_request_refresh.assert_called_once()
 
 
 async def test_sensor_handle_scene_event_different_room(

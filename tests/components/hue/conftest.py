@@ -45,6 +45,7 @@ def create_mock_bridge(hass: HomeAssistant, api_version: int = 1) -> Mock:
     )
 
     bridge.logger = logging.getLogger(__name__)
+    bridge.recommendation_composition_root = None  # Will be set up for V2 bridges
 
     if bridge.api_version == 2:
         bridge.api = create_mock_api_v2()

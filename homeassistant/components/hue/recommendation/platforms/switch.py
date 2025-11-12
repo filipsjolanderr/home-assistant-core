@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from aiohue.v2.controllers.events import EventType
-from aiohue.v2.controllers.groups import Room
+from aiohue.v2.controllers.groups import Room, Zone
 from aiohue.v2.models.resource import ResourceTypes
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
@@ -16,6 +16,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from ...bridge import HueBridge, HueConfigEntry
 from ...const import DOMAIN
 from ...v2.entity import HueBaseEntity
+from ..composition_root import CompositionRoot
+from ..coordinator import RecommendationCoordinator
 
 CONF_RECOMMENDATION_AUTO_APPLY = "recommendation_auto_apply"
 CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL = "recommendation_auto_apply_global"
@@ -33,37 +35,31 @@ async def async_setup_entry(
         return
 
     @callback
-    def async_add_switch(event_type: EventType, resource: Room) -> None:
-        """Add switch entity for Hue room."""
-        if resource.type in (ResourceTypes.ROOM, ResourceTypes.BRIDGE_HOME):
+    def async_add_switch(event_type: EventType, resource: Room | Zone) -> None:
+        """Add switch entity for Hue room or zone."""
+        if resource.type in (
+            ResourceTypes.ROOM,
+            ResourceTypes.ZONE,
+            ResourceTypes.BRIDGE_HOME,
+        ):
             async_add_entities([HueRecommendationSwitchEntity(bridge, resource)])
 
-    # Add switches for all current rooms (including bridge home)
-    for room in bridge.api.groups.room:
-        async_add_switch(EventType.RESOURCE_ADDED, room)
-
-    # Also check all groups for bridge home (it might not be in .room)
+    # Add switches for all groups (rooms, zones, and bridge home)
+    # Check all groups to ensure bridge home is included
     for group in bridge.api.groups:
-        if isinstance(group, Room) and group.type == ResourceTypes.BRIDGE_HOME:
+        if isinstance(group, (Room, Zone)):
             async_add_switch(EventType.RESOURCE_ADDED, group)
 
-    # Register listener for new rooms
-    config_entry.async_on_unload(
-        bridge.api.groups.room.subscribe(
-            async_add_switch, event_filter=EventType.RESOURCE_ADDED
-        )
-    )
-
-    # Also listen to all groups for bridge home
+    # Register listener for all groups (rooms, zones, and bridge home)
     @callback
-    def async_add_bridge_home(event_type: EventType, resource) -> None:
-        """Add switch for bridge home if it's a Room."""
-        if isinstance(resource, Room) and resource.type == ResourceTypes.BRIDGE_HOME:
+    def async_add_group(event_type: EventType, resource) -> None:
+        """Add switch for any Room or Zone (including bridge home)."""
+        if isinstance(resource, (Room, Zone)):
             async_add_switch(event_type, resource)
 
     config_entry.async_on_unload(
         bridge.api.groups.subscribe(
-            async_add_bridge_home,
+            async_add_group,
             event_filter=EventType.RESOURCE_ADDED,
         )
     )
@@ -81,10 +77,10 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
         has_entity_name=True,
     )
 
-    def __init__(self, bridge: HueBridge, room: Room) -> None:
+    def __init__(self, bridge: HueBridge, room: Room | Zone) -> None:
         """Initialize the recommendation switch."""
         super().__init__(bridge, bridge.api.groups, room)
-        self.room = room
+        self.room = room  # Can be Room or Zone
         self._attr_unique_id = f"{room.id}_auto_apply_recommendation"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, room.id)},
@@ -104,9 +100,22 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
             return self._attr_suggested_object_id
         return self.entity_description.key
 
+    @property
+    def _coordinator(self) -> RecommendationCoordinator | None:
+        """Get the shared recommendation coordinator from bridge."""
+        if self.bridge.recommendation_composition_root is None:
+            return None
+        return self.bridge.recommendation_composition_root.get_coordinator()
+
     async def async_added_to_hass(self) -> None:
         """Call when entity is added."""
         await super().async_added_to_hass()
+
+        # Sync coordinator state with config entry options
+        coordinator = self._coordinator
+        if coordinator:
+            enabled = self.is_on
+            coordinator.set_auto_apply_enabled(self.room.id, enabled)
 
         # Subscribe to room updates
         self.async_on_remove(
@@ -139,7 +148,7 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
         await self._update_auto_apply(False)
 
     async def _update_auto_apply(self, enabled: bool) -> None:
-        """Update auto-apply setting in config entry options."""
+        """Update auto-apply setting in config entry options and coordinator."""
         options = dict(self.bridge.config_entry.options or {})
         auto_apply = dict(options.get(CONF_RECOMMENDATION_AUTO_APPLY, {}))
 
@@ -151,6 +160,12 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
             auto_apply[self.room.id] = enabled
             options[CONF_RECOMMENDATION_AUTO_APPLY] = auto_apply
 
+        # Update config entry
         self.hass.config_entries.async_update_entry(
             self.bridge.config_entry, options=options
         )
+
+        # Update coordinator state
+        coordinator = self._coordinator
+        if coordinator:
+            coordinator.set_auto_apply_enabled(self.room.id, enabled)

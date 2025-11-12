@@ -51,18 +51,17 @@ class CompositionRoot:
     """Composition Root (Dependency Injection container).
 
     Builds and wires together all components of the recommendation engine.
+    One instance per bridge, manages recommendations for all rooms/zones.
     """
 
     def __init__(
         self,
         hass: HomeAssistant,
         bridge: HueBridge,
-        room_id: str,
     ) -> None:
         """Initialize composition root."""
         self.hass = hass
         self.bridge = bridge
-        self.room_id = room_id
 
         # Build registries
         self.provider_registry = ProviderRegistry.build(hass)
@@ -91,15 +90,14 @@ class CompositionRoot:
         # Build scene applier
         self.scene_applier = SceneApplier(bridge)
 
-        # Build coordinator
+        # Build coordinator (manages all rooms)
         self.coordinator = RecommendationCoordinator(
             hass=hass,
             bridge=bridge,
-            room_id=room_id,
             providers=self.provider_registry.providers,
             policy_service=self.policy_service,
             scene_applier=self.scene_applier,
-            update_interval=60,  # Update every 60 seconds (will be converted to timedelta)
+            update_interval=10,  # Update every 10 seconds for testing (will be converted to timedelta)
         )
 
     def get_coordinator(self) -> RecommendationCoordinator:

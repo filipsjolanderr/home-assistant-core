@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from aiohue.v2.controllers.events import EventType
-from aiohue.v2.controllers.groups import Room
+from aiohue.v2.controllers.groups import Room, Zone
 from aiohue.v2.models.resource import ResourceTypes
 
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
@@ -14,6 +14,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from ...bridge import HueBridge, HueConfigEntry
 from ...const import DOMAIN
 from ...v2.entity import HueBaseEntity
+from ..composition_root import CompositionRoot
+from ..coordinator import RecommendationCoordinator
 
 
 async def async_setup_entry(
@@ -27,38 +29,40 @@ async def async_setup_entry(
     if bridge.api_version == 1:
         return
 
+    # Initialize composition root for this bridge if not already done
+    if bridge.recommendation_composition_root is None:
+        bridge.recommendation_composition_root = CompositionRoot(hass, bridge)
+        coordinator = bridge.recommendation_composition_root.get_coordinator()
+        # Start the coordinator to begin periodic updates
+        # Use async_request_refresh since we don't have config_entry in coordinator
+        await coordinator.async_request_refresh()
+
     @callback
-    def async_add_sensor(event_type: EventType, resource: Room) -> None:
-        """Add sensor entity for Hue room."""
-        if resource.type in (ResourceTypes.ROOM, ResourceTypes.BRIDGE_HOME):
+    def async_add_sensor(event_type: EventType, resource: Room | Zone) -> None:
+        """Add sensor entity for Hue room or zone."""
+        if resource.type in (
+            ResourceTypes.ROOM,
+            ResourceTypes.ZONE,
+            ResourceTypes.BRIDGE_HOME,
+        ):
             async_add_entities([HueRecommendationSensorEntity(bridge, resource)])
 
-    # Add sensors for all current rooms (including bridge home)
-    for room in bridge.api.groups.room:
-        async_add_sensor(EventType.RESOURCE_ADDED, room)
-
-    # Also check all groups for bridge home (it might not be in .room)
+    # Add sensors for all groups (rooms, zones, and bridge home)
+    # Check all groups to ensure bridge home is included
     for group in bridge.api.groups:
-        if isinstance(group, Room) and group.type == ResourceTypes.BRIDGE_HOME:
+        if isinstance(group, (Room, Zone)):
             async_add_sensor(EventType.RESOURCE_ADDED, group)
 
-    # Register listener for new rooms
-    config_entry.async_on_unload(
-        bridge.api.groups.room.subscribe(
-            async_add_sensor, event_filter=EventType.RESOURCE_ADDED
-        )
-    )
-
-    # Also listen to all groups for bridge home
+    # Register listener for all groups (rooms, zones, and bridge home)
     @callback
-    def async_add_bridge_home(event_type: EventType, resource) -> None:
-        """Add sensor for bridge home if it's a Room."""
-        if isinstance(resource, Room) and resource.type == ResourceTypes.BRIDGE_HOME:
+    def async_add_group(event_type: EventType, resource) -> None:
+        """Add sensor for any Room or Zone (including bridge home)."""
+        if isinstance(resource, (Room, Zone)):
             async_add_sensor(event_type, resource)
 
     config_entry.async_on_unload(
         bridge.api.groups.subscribe(
-            async_add_bridge_home,
+            async_add_group,
             event_filter=EventType.RESOURCE_ADDED,
         )
     )
@@ -76,31 +80,41 @@ class HueRecommendationSensorEntity(HueBaseEntity, SensorEntity):
         has_entity_name=True,
     )
 
-    def __init__(self, bridge: HueBridge, room: Room) -> None:
+    def __init__(self, bridge: HueBridge, room: Room | Zone) -> None:
         """Initialize the recommendation sensor."""
         super().__init__(bridge, bridge.api.groups, room)
-        self.room = room
+        self.room = room  # Can be Room or Zone
         self._attr_unique_id = f"{room.id}_recommendation"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, room.id)},
         )
-        # Set suggested_object_id directly to ensure correct entity ID generation
-        self._attr_suggested_object_id = self.entity_description.key
 
     @property
     def suggested_object_id(self) -> str | None:
         """Return suggested object ID for entity ID generation."""
-        # Override to use the key directly instead of resolving translations
-        if (
-            hasattr(self, "_attr_suggested_object_id")
-            and self._attr_suggested_object_id
-        ):
-            return self._attr_suggested_object_id
-        return self.entity_description.key
+        # Always return "recommendation" for proper entity ID generation
+        return "recommendation"
+
+    @property
+    def _coordinator(self) -> RecommendationCoordinator | None:
+        """Get the shared recommendation coordinator from bridge."""
+        if self.bridge.recommendation_composition_root is None:
+            return None
+        return self.bridge.recommendation_composition_root.get_coordinator()
 
     async def async_added_to_hass(self) -> None:
         """Call when entity is added."""
         await super().async_added_to_hass()
+
+        # Ensure coordinator is initialized
+        coordinator = self._coordinator
+        if coordinator is None:
+            return
+
+        # Subscribe to coordinator updates
+        self.async_on_remove(
+            coordinator.async_add_listener(self._handle_coordinator_update)
+        )
 
         # Subscribe to room updates
         self.async_on_remove(
@@ -119,39 +133,54 @@ class HueRecommendationSensorEntity(HueBaseEntity, SensorEntity):
         )
 
     @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle coordinator updates."""
+        self.async_write_ha_state()
+
+    @callback
     def _handle_scene_event(self, event_type: EventType, resource) -> None:
         """Handle scene updates."""
         # Check if this scene belongs to our room
         try:
             scene_group = self.bridge.api.scenes.get_group(resource.id)
             if scene_group and scene_group.id == self.room.id:
-                self.async_write_ha_state()
+                # Request coordinator refresh when scenes change
+                if self._coordinator:
+                    self._coordinator.async_request_refresh()
         except (AttributeError, KeyError):
             # Scene might not have a group yet, ignore
             pass
 
     def _get_recommended_scene(self) -> str | None:
         """Get the recommended scene name for this room."""
-        try:
-            # Find all scenes for this room
-            scenes_for_room = []
-            for scene in self.bridge.api.scenes:
-                try:
-                    scene_group = self.bridge.api.scenes.get_group(scene.id)
-                    if scene_group and scene_group.id == self.room.id:
-                        scenes_for_room.append(scene)
-                except (AttributeError, KeyError):
-                    # Scene might not have a group, skip it
-                    continue
-
-            if not scenes_for_room:
-                return None
-
-            # Return the first scene's name (simple recommendation)
-            # Could be enhanced with more sophisticated logic later
-            return scenes_for_room[0].metadata.name
-        except (AttributeError, KeyError):
+        coordinator = self._coordinator
+        if not coordinator or not coordinator.data:
             return None
+
+        # Get decision for this specific room
+        decision = coordinator.get_decision(self.room.id)
+        if not decision or not decision.scene_id:
+            return None
+
+        # Get scene name from the scene ID
+        # Try using .get() method first (if available)
+        try:
+            scene = self.bridge.api.scenes.get(decision.scene_id)
+            if scene:
+                return scene.metadata.name
+        except (AttributeError, KeyError):
+            pass
+
+        # Fallback: iterate through scenes to find matching ID
+        try:
+            for scene in self.bridge.api.scenes:
+                if scene.id == decision.scene_id:
+                    return scene.metadata.name
+        except (AttributeError, KeyError):
+            pass
+
+        # Final fallback: return scene ID if name not available
+        return decision.scene_id
 
     @property
     def native_value(self) -> str | None:

@@ -52,6 +52,9 @@ class HueBridge:
         self.reset_jobs: list[core.CALLBACK_TYPE] = []
         self.sensor_manager: SensorManager | None = None
         self.logger = logging.getLogger(__name__)
+        self.recommendation_composition_root: Any = (
+            None  # Will be set up for V2 bridges
+        )
         # store actual api connection to bridge as api
         app_key: str = self.config_entry.data[CONF_API_KEY]
         if self.api_version == 1:
