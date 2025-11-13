@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import random
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
@@ -49,6 +48,7 @@ class RecommendationCoordinator(DataUpdateCoordinator[dict[str, Decision | None]
             _LOGGER,
             name="hue_recommendation",
             update_interval=update_interval,
+            config_entry=bridge.config_entry,
         )
         self.bridge = bridge
         self.providers = providers
@@ -134,7 +134,7 @@ class RecommendationCoordinator(DataUpdateCoordinator[dict[str, Decision | None]
                     else None,
                 )
 
-                # TESTING: Make random decision instead of using policy service
+                # Make decision using policy service
                 if not available_scenes:
                     _LOGGER.debug(
                         "No available scenes for room %s (%s)", room_id, room_name
@@ -142,22 +142,8 @@ class RecommendationCoordinator(DataUpdateCoordinator[dict[str, Decision | None]
                     recommendations[room_id] = None
                     continue
 
-                # Randomly select a scene for testing
-                random_scene_id = random.choice(available_scenes)
-                random_score = random.uniform(0.5, 1.0)
-                random_confidence = random.uniform(0.6, 1.0)
-
-                # Create a Decision object with random values
-                decision = Decision(
-                    scene_id=random_scene_id,
-                    score=random_score,
-                    confidence=random_confidence,
-                    contributions={},
-                    strategy_scores={},
-                )
-
-                # Make decision (commented out for testing)
-                # decision = await self.policy_service.decide(context)
+                # Use policy service to make decision
+                decision = await self.policy_service.decide(context, available_scenes)
 
                 # Log decision
                 if decision:

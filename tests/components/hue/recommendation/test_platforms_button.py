@@ -161,10 +161,8 @@ async def test_button_async_press_regular_scene(
     mock_coordinator = AsyncMock()
     mock_coordinator.apply_recommendation = AsyncMock()
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationButtonEntity(bridge, room)
     await entity.async_press()
@@ -213,10 +211,8 @@ async def test_button_async_press_smart_scene(
     mock_coordinator = AsyncMock()
     mock_coordinator.apply_recommendation = AsyncMock()
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationButtonEntity(bridge, room)
     await entity.async_press()
@@ -247,10 +243,8 @@ async def test_button_async_press_no_scene(
         side_effect=ValueError("No recommendation available for room room1")
     )
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationButtonEntity(bridge, room)
 
@@ -289,10 +283,8 @@ async def test_button_async_press_scene_not_for_room(
         side_effect=ValueError("No recommendation available for room room1")
     )
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationButtonEntity(bridge, room)
 

@@ -151,10 +151,8 @@ async def test_sensor_native_value_with_scene(
     mock_coordinator.data = {"room1": decision}
     mock_coordinator.get_decision = Mock(return_value=decision)
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationSensorEntity(bridge, room)
 
@@ -183,10 +181,8 @@ async def test_sensor_native_value_no_scene(
     mock_coordinator.data = {"room1": None}
     mock_coordinator.get_decision = Mock(return_value=None)
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationSensorEntity(bridge, room)
 
@@ -223,10 +219,8 @@ async def test_sensor_native_value_scene_not_for_room(
     mock_coordinator.data = {"room1": None}
     mock_coordinator.get_decision = Mock(return_value=None)
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationSensorEntity(bridge, room)
 
@@ -250,10 +244,8 @@ async def test_sensor_async_added_to_hass(
     mock_coordinator.async_add_listener = Mock(return_value=Mock())
     mock_coordinator.async_request_refresh = Mock()
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     groups_subscribe_mock = Mock(return_value=Mock())
     scenes_subscribe_mock = Mock(return_value=Mock())
@@ -289,10 +281,8 @@ async def test_sensor_handle_scene_event(
     mock_coordinator = Mock()
     mock_coordinator.async_request_refresh = Mock()
 
-    # Mock composition root
-    mock_composition_root = Mock()
-    mock_composition_root.get_coordinator = Mock(return_value=mock_coordinator)
-    bridge.recommendation_composition_root = mock_composition_root
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationSensorEntity(bridge, room)
     entity.async_write_ha_state = Mock()

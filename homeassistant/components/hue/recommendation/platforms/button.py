@@ -15,7 +15,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from ...bridge import HueBridge, HueConfigEntry
 from ...const import DOMAIN
 from ...v2.entity import HueBaseEntity
-from ..composition_root import CompositionRoot
 from ..coordinator import RecommendationCoordinator
 
 
@@ -29,14 +28,6 @@ async def async_setup_entry(
 
     if bridge.api_version == 1:
         return
-
-    # Ensure composition root is initialized (may already be done by sensor setup)
-    if bridge.recommendation_composition_root is None:
-        bridge.recommendation_composition_root = CompositionRoot(hass, bridge)
-        coordinator = bridge.recommendation_composition_root.get_coordinator()
-        # Start the coordinator to begin periodic updates
-        # Use async_request_refresh since we don't have config_entry in coordinator
-        await coordinator.async_request_refresh()
 
     @callback
     def async_add_button(event_type: EventType, resource: Room | Zone) -> None:
@@ -94,9 +85,7 @@ class HueRecommendationButtonEntity(HueBaseEntity, ButtonEntity):
     @property
     def _coordinator(self) -> RecommendationCoordinator | None:
         """Get the shared recommendation coordinator from bridge."""
-        if self.bridge.recommendation_composition_root is None:
-            return None
-        return self.bridge.recommendation_composition_root.get_coordinator()
+        return self.bridge.recommendation_coordinator
 
     async def async_added_to_hass(self) -> None:
         """Call when entity is added."""

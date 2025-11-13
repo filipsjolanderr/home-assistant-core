@@ -16,7 +16,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from ...bridge import HueBridge, HueConfigEntry
 from ...const import DOMAIN
 from ...v2.entity import HueBaseEntity
-from ..composition_root import CompositionRoot
 from ..coordinator import RecommendationCoordinator
 
 CONF_RECOMMENDATION_AUTO_APPLY = "recommendation_auto_apply"
@@ -103,9 +102,7 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
     @property
     def _coordinator(self) -> RecommendationCoordinator | None:
         """Get the shared recommendation coordinator from bridge."""
-        if self.bridge.recommendation_composition_root is None:
-            return None
-        return self.bridge.recommendation_composition_root.get_coordinator()
+        return self.bridge.recommendation_coordinator
 
     async def async_added_to_hass(self) -> None:
         """Call when entity is added."""
