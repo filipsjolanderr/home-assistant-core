@@ -246,6 +246,7 @@ async def test_sensor_async_added_to_hass(
 
     # Mock coordinator
     bridge.recommendation_coordinator = mock_coordinator
+    bridge.recommendation_ready.set()
 
     groups_subscribe_mock = Mock(return_value=Mock())
     scenes_subscribe_mock = Mock(return_value=Mock())
@@ -283,6 +284,7 @@ async def test_sensor_handle_scene_event(
 
     # Mock coordinator
     bridge.recommendation_coordinator = mock_coordinator
+    bridge.recommendation_ready.set()
 
     entity = HueRecommendationSensorEntity(bridge, room)
     entity.async_write_ha_state = Mock()

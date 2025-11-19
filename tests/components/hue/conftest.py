@@ -46,6 +46,9 @@ def create_mock_bridge(hass: HomeAssistant, api_version: int = 1) -> Mock:
 
     bridge.logger = logging.getLogger(__name__)
     bridge.recommendation_coordinator = None  # Will be set up for V2 bridges
+    bridge.recommendation_ready = asyncio.Event()
+    if bridge.api_version == 1:
+        bridge.recommendation_ready.set()
 
     if bridge.api_version == 2:
         bridge.api = create_mock_api_v2()

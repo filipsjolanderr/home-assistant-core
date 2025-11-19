@@ -57,6 +57,9 @@ class HueBridge:
         self.recommendation_coordinator: RecommendationCoordinator | None = (
             None  # Will be set up for V2 bridges
         )
+        self.recommendation_ready = asyncio.Event()
+        if self.api_version == 1:
+            self.recommendation_ready.set()
         # store actual api connection to bridge as api
         app_key: str = self.config_entry.data[CONF_API_KEY]
         if self.api_version == 1:

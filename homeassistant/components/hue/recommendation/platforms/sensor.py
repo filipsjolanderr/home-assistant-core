@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from aiohue.v2.controllers.events import EventType
 from aiohue.v2.controllers.groups import Room, Zone
 from aiohue.v2.models.resource import ResourceTypes
@@ -79,6 +81,7 @@ class HueRecommendationSensorEntity(HueBaseEntity, SensorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, room.id)},
         )
+        self._coordinator_unsub: Callable[[], None] | None = None
 
     @property
     def suggested_object_id(self) -> str | None:
@@ -95,15 +98,8 @@ class HueRecommendationSensorEntity(HueBaseEntity, SensorEntity):
         """Call when entity is added."""
         await super().async_added_to_hass()
 
-        # Ensure coordinator is initialized
-        coordinator = self._coordinator
-        if coordinator is None:
-            return
-
-        # Subscribe to coordinator updates
-        self.async_on_remove(
-            coordinator.async_add_listener(self._handle_coordinator_update)
-        )
+        # Ensure coordinator is initialized (may be set after platform setup)
+        self._async_bind_coordinator_listener()
 
         # Subscribe to room updates
         self.async_on_remove(
@@ -120,6 +116,30 @@ class HueRecommendationSensorEntity(HueBaseEntity, SensorEntity):
                 self._handle_scene_event,
             )
         )
+
+    def _async_bind_coordinator_listener(self) -> None:
+        """Ensure we bind to the coordinator once it becomes available."""
+
+        def _attach_listener() -> None:
+            if self._coordinator_unsub or not self._coordinator:
+                return
+            self._coordinator_unsub = self._coordinator.async_add_listener(
+                self._handle_coordinator_update
+            )
+            self.async_on_remove(self._coordinator_unsub)
+            # Trigger initial state update now that coordinator is available
+            self._handle_coordinator_update()
+
+        if self.bridge.recommendation_ready.is_set():
+            _attach_listener()
+            return
+
+        async def _wait_for_recommendation() -> None:
+            await self.bridge.recommendation_ready.wait()
+            _attach_listener()
+
+        ready_task = self.hass.async_create_task(_wait_for_recommendation())
+        self.async_on_remove(ready_task.cancel)
 
     @callback
     def _handle_coordinator_update(self) -> None:

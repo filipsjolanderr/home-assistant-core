@@ -111,9 +111,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: HueConfigEntry) -> bool:
 
     # Set up recommendation engine for V2 bridges
     if bridge.api_version == 2:
-        bridge.recommendation_coordinator = await async_setup_recommendation(
-            hass, bridge
-        )
+        try:
+            bridge.recommendation_coordinator = await async_setup_recommendation(
+                hass, bridge
+            )
+        finally:
+            bridge.recommendation_ready.set()
 
     return True
 
