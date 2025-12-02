@@ -39,6 +39,20 @@ class SunContext:
 
 
 @dataclass
+class PresenceContext:
+    """Presence and occupancy context."""
+
+    is_anyone_home: bool = False
+    """True if at least one tracked entity is home."""
+    present_entities: list[str] = field(default_factory=list)
+    """List of entity_ids currently detected at home."""
+    absent_entities: list[str] = field(default_factory=list)
+    """List of entity_ids currently not at home."""
+    last_changed: dict[str, str] = field(default_factory=dict)
+    """Map entity_id -> ISO timestamp of last state change (string), optional."""
+
+
+@dataclass
 class HomeContext:
     """Complete home context for recommendation decisions."""
 
@@ -50,3 +64,5 @@ class HomeContext:
     """Constraints affecting scene selection."""
     metadata: dict[str, Any] = field(default_factory=dict)
     """Additional metadata from providers."""
+    presence: PresenceContext = field(default_factory=PresenceContext)
+    """Presence context."""

@@ -7,8 +7,7 @@ from .strategy import IStrategy, StrategyResult
 
 
 class TimeOfDayStrategy(IStrategy):
-    """
-    MVP strategy: recommends 3 scenes based on sun position.
+    """MVP strategy: recommends 3 scenes based on sun position.
 
     - Morning scene: sun elevation < 10 degrees (dawn/morning)
     - Day scene: sun elevation >= 10 degrees (daytime)

@@ -6,12 +6,14 @@ from homeassistant.core import HomeAssistant
 
 from ..bridge import HueBridge
 from .context.providers import IContextProvider
+from .context.providers.presence_provider import PresenceProvider
 from .context.providers.sun_provider import SunProvider
 from .coordinator import RecommendationCoordinator
 from .coordinator.scene_applier import SceneApplier
 from .policy import PolicyService
 from .policy.last_decision import LastDecisionStore
 from .policy.strategies import IStrategy, TimeOfDayStrategy
+from .policy.strategies.home_arrival_strategy import HomeArrivalStrategy
 from .policy.weights import WeightsAndParams
 
 
@@ -27,6 +29,7 @@ class ProviderRegistry:
         """Build provider registry with default providers."""
         providers: list[IContextProvider] = [
             SunProvider(hass),
+            PresenceProvider(hass),
         ]
         return cls(providers)
 
@@ -43,6 +46,7 @@ class StrategyRegistry:
         """Build strategy registry with default strategies."""
         strategies: list[IStrategy] = [
             TimeOfDayStrategy(),
+            HomeArrivalStrategy(),
         ]
         return cls(strategies)
 

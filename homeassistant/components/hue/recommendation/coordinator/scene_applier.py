@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from aiohue.v2.controllers.scenes import ScenesController
 from aiohue.v2.models.smart_scene import SmartScene
 
 from ...bridge import HueBridge
@@ -16,8 +15,7 @@ class SceneApplier:
         self.bridge = bridge
 
     async def apply(self, scene_id: str) -> None:
-        """
-        Apply a scene by ID.
+        """Apply a scene by ID.
 
         Args:
             scene_id: ID of the scene to apply
