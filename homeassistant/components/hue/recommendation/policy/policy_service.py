@@ -31,8 +31,7 @@ class PolicyService:
     async def decide(
         self, context: HomeContext, candidates: list[str] | None = None
     ) -> Decision | None:
-        """
-        Make a recommendation decision.
+        """Make a recommendation decision.
 
         Args:
             context: Current home context

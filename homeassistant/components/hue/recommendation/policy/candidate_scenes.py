@@ -10,8 +10,7 @@ class CandidateScenes:
 
     @staticmethod
     def enumerate(context: HomeContext) -> list[str]:
-        """
-        Get list of candidate scene IDs from context.
+        """Get list of candidate scene IDs from context.
 
         Args:
             context: Home context with lighting information

@@ -2,4 +2,4 @@
 
 from .home_context import Constraints, HomeContext, LightingContext, SunContext
 
-__all__ = ["Constraints", "HomeContext", "LightingContext", "SunContext"]
+__all__ = ["Constraints", "HomeContext", "LightingContext", "ScheduleContext", "SunContext"]
