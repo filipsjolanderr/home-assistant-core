@@ -7,12 +7,13 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 
 from ..bridge import HueBridge
+from .context.providers.presence_provider import PresenceProvider
 from .context.providers.provider import IContextProvider
 from .context.providers.sun_provider import SunProvider
 from .coordinator import RecommendationCoordinator, SceneApplier
 from .policy import Decision, PolicyService
 from .policy.last_decision import LastDecisionStore
-from .policy.strategies import IStrategy, TimeOfDayStrategy
+from .policy.strategies import HomeArrivalStrategy, IStrategy, TimeOfDayStrategy
 from .policy.weights import WeightsAndParams
 
 # Default weights and parameters for recommendation engine
@@ -50,10 +51,10 @@ async def async_setup_recommendation(
         Initialized recommendation coordinator
     """
     # Build context providers
-    providers: list[IContextProvider] = [SunProvider(hass)]
+    providers: list[IContextProvider] = [SunProvider(hass), PresenceProvider(hass)]
 
     # Build strategies
-    strategies: list[IStrategy] = [TimeOfDayStrategy()]
+    strategies: list[IStrategy] = [TimeOfDayStrategy(), HomeArrivalStrategy()]
 
     # Build weights and params - auto-populate strategy weights from registered strategies
     strategy_weights = {
