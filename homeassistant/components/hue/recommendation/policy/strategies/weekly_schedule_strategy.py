@@ -35,9 +35,17 @@ class WeeklyScheduleStrategy(IStrategy):
         active_period = context.schedule.active_period
 
         if not active_period:
-            # Fallback to sun-based logic if no schedule is active
-            active_period = self._get_sun_based_period(context.sun.elevation)
-
+            # No schedule active - return neutral scores, let other strategies decide
+            scene_scores = {scene_id: 0.5 for scene_id in candidates}
+            return StrategyResult(
+                scene_scores=scene_scores,
+                metadata={
+                    "active_period": None,
+                    "has_active_schedule": False,
+                    "available_periods": context.schedule.available_periods,
+                },
+            )
+            
         scene_scores = self._score_scenes(candidates, active_period)
 
         return StrategyResult(
