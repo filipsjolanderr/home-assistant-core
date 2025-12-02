@@ -51,14 +51,6 @@ class WeeklyScheduleStrategy(IStrategy):
             },
         )
 
-    def _get_sun_based_period(self, elevation: float) -> str:
-        """Fallback to sun-based period when no schedule is active."""
-        if elevation < 0:
-            return "night"
-        if elevation < 10:
-            return "morning"
-        return "work"
-
     def _score_scenes(
         self, candidates: list[str], active_period: str
     ) -> dict[str, float]:
