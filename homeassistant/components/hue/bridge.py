@@ -5,8 +5,10 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from .recommendation.coordinator import RecommendationCoordinator
 import aiohttp
 from aiohttp import client_exceptions
 from aiohue import HueBridgeV1, HueBridgeV2, LinkButtonNotPressed, Unauthorized
@@ -52,6 +54,12 @@ class HueBridge:
         self.reset_jobs: list[core.CALLBACK_TYPE] = []
         self.sensor_manager: SensorManager | None = None
         self.logger = logging.getLogger(__name__)
+        self.recommendation_coordinator: RecommendationCoordinator | None = (
+            None  # Will be set up for V2 bridges
+        )
+        self.recommendation_ready = asyncio.Event()
+        if self.api_version == 1:
+            self.recommendation_ready.set()
         # store actual api connection to bridge as api
         app_key: str = self.config_entry.data[CONF_API_KEY]
         if self.api_version == 1:

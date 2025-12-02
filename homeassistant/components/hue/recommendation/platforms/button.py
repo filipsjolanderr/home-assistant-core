@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from aiohue.v2.controllers.events import EventType
-from aiohue.v2.controllers.groups import Room
+from aiohue.v2.controllers.groups import Room, Zone
 from aiohue.v2.models.resource import ResourceTypes
-from aiohue.v2.models.smart_scene import SmartScene
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.core import HomeAssistant, callback
@@ -16,6 +15,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from ...bridge import HueBridge, HueConfigEntry
 from ...const import DOMAIN
 from ...v2.entity import HueBaseEntity
+from ..coordinator import RecommendationCoordinator
 
 
 async def async_setup_entry(
@@ -30,37 +30,27 @@ async def async_setup_entry(
         return
 
     @callback
-    def async_add_button(event_type: EventType, resource: Room) -> None:
-        """Add button entity for Hue room."""
-        if resource.type in (ResourceTypes.ROOM, ResourceTypes.BRIDGE_HOME):
+    def async_add_button(event_type: EventType, resource: Room | Zone) -> None:
+        """Add button entity for Hue room or zone."""
+        if resource.type in (ResourceTypes.ROOM, ResourceTypes.ZONE, ResourceTypes.BRIDGE_HOME):
             async_add_entities([HueRecommendationButtonEntity(bridge, resource)])
 
-    # Add buttons for all current rooms (including bridge home)
-    for room in bridge.api.groups.room:
-        async_add_button(EventType.RESOURCE_ADDED, room)
-
-    # Also check all groups for bridge home (it might not be in .room)
+    # Add buttons for all groups (rooms, zones, and bridge home)
+    # Check all groups to ensure bridge home is included
     for group in bridge.api.groups:
-        if isinstance(group, Room) and group.type == ResourceTypes.BRIDGE_HOME:
+        if isinstance(group, (Room, Zone)):
             async_add_button(EventType.RESOURCE_ADDED, group)
 
-    # Register listener for new rooms
-    config_entry.async_on_unload(
-        bridge.api.groups.room.subscribe(
-            async_add_button, event_filter=EventType.RESOURCE_ADDED
-        )
-    )
-
-    # Also listen to all groups for bridge home
+    # Register listener for all groups (rooms, zones, and bridge home)
     @callback
-    def async_add_bridge_home(event_type: EventType, resource) -> None:
-        """Add button for bridge home if it's a Room."""
-        if isinstance(resource, Room) and resource.type == ResourceTypes.BRIDGE_HOME:
+    def async_add_group(event_type: EventType, resource) -> None:
+        """Add button for any Room or Zone (including bridge home)."""
+        if isinstance(resource, (Room, Zone)):
             async_add_button(event_type, resource)
 
     config_entry.async_on_unload(
         bridge.api.groups.subscribe(
-            async_add_bridge_home,
+            async_add_group,
             event_filter=EventType.RESOURCE_ADDED,
         )
     )
@@ -78,27 +68,24 @@ class HueRecommendationButtonEntity(HueBaseEntity, ButtonEntity):
         has_entity_name=True,
     )
 
-    def __init__(self, bridge: HueBridge, room: Room) -> None:
+    def __init__(self, bridge: HueBridge, room: Room | Zone) -> None:
         """Initialize the recommendation button."""
         super().__init__(bridge, bridge.api.groups, room)
-        self.room = room
+        self.room = room  # Can be Room or Zone
         self._attr_unique_id = f"{room.id}_apply_recommendation"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, room.id)},
         )
-        # Set suggested_object_id directly to ensure correct entity ID generation
-        self._attr_suggested_object_id = self.entity_description.key
-
     @property
     def suggested_object_id(self) -> str | None:
         """Return suggested object ID for entity ID generation."""
-        # Override to use the key directly instead of resolving translations
-        if (
-            hasattr(self, "_attr_suggested_object_id")
-            and self._attr_suggested_object_id
-        ):
-            return self._attr_suggested_object_id
-        return self.entity_description.key
+        # Always return "apply_recommendation" for proper entity ID generation
+        return "apply_recommendation"
+
+    @property
+    def _coordinator(self) -> RecommendationCoordinator | None:
+        """Get the shared recommendation coordinator from bridge."""
+        return self.bridge.recommendation_coordinator
 
     async def async_added_to_hass(self) -> None:
         """Call when entity is added."""
@@ -113,44 +100,14 @@ class HueRecommendationButtonEntity(HueBaseEntity, ButtonEntity):
             )
         )
 
-    def _get_recommended_scene(self):
-        """Get the recommended scene for this room."""
-        try:
-            # Find all scenes for this room
-            scenes_for_room = []
-            for scene in self.bridge.api.scenes:
-                try:
-                    scene_group = self.bridge.api.scenes.get_group(scene.id)
-                    if scene_group and scene_group.id == self.room.id:
-                        scenes_for_room.append(scene)
-                except (AttributeError, KeyError):
-                    # Scene might not have a group, skip it
-                    continue
-
-            if not scenes_for_room:
-                return None
-
-            # Return the first scene (simple recommendation)
-            return scenes_for_room[0]
-        except (AttributeError, KeyError):
-            return None
-
     async def async_press(self) -> None:
         """Press the button to apply the recommended scene."""
-        scene = self._get_recommended_scene()
-        if not scene:
-            raise HomeAssistantError("No recommendation available for this room")
+        coordinator = self._coordinator
+        if not coordinator:
+            raise HomeAssistantError("Recommendation coordinator not available")
 
-        # Check if it's a smart scene or regular scene
-        if isinstance(scene, SmartScene):
-            # Activate smart scene
-            await self.bridge.async_request_call(
-                self.bridge.api.scenes.smart_scene.recall,
-                scene.id,
-            )
-        else:
-            # Activate regular scene
-            await self.bridge.async_request_call(
-                self.bridge.api.scenes.scene.recall,
-                scene.id,
-            )
+        # Use coordinator's apply_recommendation method
+        try:
+            await coordinator.apply_recommendation(self.room.id)
+        except ValueError as err:
+            raise HomeAssistantError(str(err)) from err

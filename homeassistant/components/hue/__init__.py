@@ -7,11 +7,11 @@ from homeassistant.config_entries import SOURCE_IGNORE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.typing import ConfigType
-
 from .bridge import HueBridge, HueConfigEntry
 from .const import DOMAIN
 from .migration import check_migration
 from .services import async_setup_services
+from .recommendation import async_setup_recommendation
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -108,6 +108,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: HueConfigEntry) -> bool:
             model_id=api.config.model_id,
             sw_version=api.config.software_version,
         )
+
+    # Set up recommendation engine for V2 bridges
+    if bridge.api_version == 2:
+        try:
+            bridge.recommendation_coordinator = await async_setup_recommendation(
+                hass, bridge
+            )
+        finally:
+            bridge.recommendation_ready.set()
 
     return True
 

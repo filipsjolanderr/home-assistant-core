@@ -148,13 +148,26 @@ async def test_button_async_press_regular_scene(
     scenes_controller.__iter__ = Mock(return_value=iter([scene]))
     bridge.api.scenes = scenes_controller
 
+    # Mock coordinator
+    from homeassistant.components.hue.recommendation.policy.decision import Decision
+
+    decision = Decision(
+        scene_id="scene1",
+        score=1.0,
+        confidence=0.8,
+        contributions={},
+        strategy_scores={},
+    )
+    mock_coordinator = AsyncMock()
+    mock_coordinator.apply_recommendation = AsyncMock()
+
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
+
     entity = HueRecommendationButtonEntity(bridge, room)
     await entity.async_press()
 
-    bridge.async_request_call.assert_called_once()
-    call_args = bridge.async_request_call.call_args
-    assert call_args[0][0] == scenes_controller.scene.recall
-    assert call_args[0][1] == "scene1"
+    mock_coordinator.apply_recommendation.assert_called_once_with("room1")
 
 
 async def test_button_async_press_smart_scene(
@@ -185,13 +198,26 @@ async def test_button_async_press_smart_scene(
     scenes_controller.__iter__ = Mock(return_value=iter([smart_scene]))
     bridge.api.scenes = scenes_controller
 
+    # Mock coordinator
+    from homeassistant.components.hue.recommendation.policy.decision import Decision
+
+    decision = Decision(
+        scene_id="smart_scene1",
+        score=1.0,
+        confidence=0.8,
+        contributions={},
+        strategy_scores={},
+    )
+    mock_coordinator = AsyncMock()
+    mock_coordinator.apply_recommendation = AsyncMock()
+
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
+
     entity = HueRecommendationButtonEntity(bridge, room)
     await entity.async_press()
 
-    bridge.async_request_call.assert_called_once()
-    call_args = bridge.async_request_call.call_args
-    assert call_args[0][0] == scenes_controller.smart_scene.recall
-    assert call_args[0][1] == "smart_scene1"
+    mock_coordinator.apply_recommendation.assert_called_once_with("room1")
 
 
 async def test_button_async_press_no_scene(
@@ -210,6 +236,15 @@ async def test_button_async_press_no_scene(
     scenes_controller = Mock()
     scenes_controller.__iter__ = Mock(return_value=iter([]))
     bridge.api.scenes = scenes_controller
+
+    # Mock coordinator that raises ValueError
+    mock_coordinator = AsyncMock()
+    mock_coordinator.apply_recommendation = AsyncMock(
+        side_effect=ValueError("No recommendation available for room room1")
+    )
+
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationButtonEntity(bridge, room)
 
@@ -241,6 +276,15 @@ async def test_button_async_press_scene_not_for_room(
     scenes_controller.get_group = Mock(return_value=other_room)
     scenes_controller.__iter__ = Mock(return_value=iter([scene]))
     bridge.api.scenes = scenes_controller
+
+    # Mock coordinator that raises ValueError
+    mock_coordinator = AsyncMock()
+    mock_coordinator.apply_recommendation = AsyncMock(
+        side_effect=ValueError("No recommendation available for room room1")
+    )
+
+    # Mock coordinator
+    bridge.recommendation_coordinator = mock_coordinator
 
     entity = HueRecommendationButtonEntity(bridge, room)
 
