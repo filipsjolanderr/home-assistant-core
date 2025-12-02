@@ -3,4 +3,4 @@
 from .provider import IContextProvider
 from .sun_provider import SunProvider
 
-__all__ = ["IContextProvider", "SunProvider"]
+__all__ = ["IContextProvider", "ScheduleProvider", "SunProvider"]

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from datetime import timedelta
+import logging
+
+from aiohue.v2.controllers.groups import Room, Zone
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-
-from aiohue.v2.controllers.groups import Room, Zone
 
 from ...bridge import HueBridge
 from ..context import HomeContext
