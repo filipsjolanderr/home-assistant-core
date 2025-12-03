@@ -7,6 +7,15 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 
 from ..bridge import HueBridge
+from ..const import (
+    CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
+    CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
+    CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
+    DEFAULT_RECOMMENDATION_STRATEGY_WEIGHT,
+    DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
+    DEFAULT_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
+    DEFAULT_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
+)
 from . import scene_catalog
 from .context.providers.presence_provider import PresenceProvider
 from .context.providers.provider import IContextProvider
@@ -23,16 +32,6 @@ from .policy.strategies import (
     WeeklyScheduleStrategy,
 )
 from .policy.weights import WeightsAndParams
-
-# Default weights and parameters for recommendation engine
-DEFAULT_STRATEGY_WEIGHT = 1.0
-"""Default weight for a strategy."""
-DEFAULT_INERTIA_BOOST = 0.2
-"""Default boost score for previously selected scene (hysteresis)."""
-DEFAULT_SWITCH_DELTA_MIN = 0.1
-"""Default minimum score delta required to switch scenes."""
-DEFAULT_MIN_DWELL_SECONDS = 300
-"""Default minimum time (seconds) before allowing scene switch."""
 
 __all__ = [
     "Decision",
@@ -73,16 +72,48 @@ async def async_setup_recommendation(
         HomeArrivalStrategy(),
     ]
 
-    # Build weights and params - auto-populate strategy weights from registered strategies
-    strategy_weights = {
-        strategy.strategy_id: DEFAULT_STRATEGY_WEIGHT for strategy in strategies
+    # Map strategy IDs to config option keys for user-configurable weights.
+    strategy_option_keys: dict[str, str] = {
+        "time_of_day": CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
+        "weekly_schedule": CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
+        "home_arrival": CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
     }
-    weights = WeightsAndParams(
-        strategy_weights=strategy_weights,
-        inertia_boost=DEFAULT_INERTIA_BOOST,
-        switch_delta_min=DEFAULT_SWITCH_DELTA_MIN,
-        min_dwell_seconds=DEFAULT_MIN_DWELL_SECONDS,
+
+    # Build weights and params - auto-populate strategy weights from registered
+    # strategies, allowing user-configured overrides via config entry options.
+    config_entry = getattr(bridge, "config_entry", None)
+    config_options: dict[str, object] = (
+        getattr(config_entry, "options", {}) if config_entry is not None else {}
     )
+
+    strategy_weights: dict[str, float] = {}
+    for strategy in strategies:
+        option_key = strategy_option_keys.get(strategy.strategy_id)
+        if option_key is not None and option_key in config_options:
+            # Coerce to float but fall back to default on invalid data.
+            try:
+                strategy_weights[strategy.strategy_id] = float(
+                    config_options[option_key]  # type: ignore[arg-type]
+                )
+            except (TypeError, ValueError):
+                strategy_weights[strategy.strategy_id] = (
+                    DEFAULT_RECOMMENDATION_STRATEGY_WEIGHT
+                )
+        else:
+            if strategy.strategy_id == "time_of_day":
+                default_weight = DEFAULT_RECOMMENDATION_WEIGHT_TIME_OF_DAY
+            elif strategy.strategy_id == "weekly_schedule":
+                default_weight = DEFAULT_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE
+            elif strategy.strategy_id == "home_arrival":
+                default_weight = DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL
+            else:
+                default_weight = DEFAULT_RECOMMENDATION_STRATEGY_WEIGHT
+            strategy_weights[strategy.strategy_id] = default_weight
+
+    # Hysteresis parameters (inertia and dwell) are centrally defined
+    # in WeightsAndParams and can be overridden via config entry options
+    # in the future. For now we rely on WeightsAndParams defaults here.
+    weights = WeightsAndParams(strategy_weights=strategy_weights)
 
     # Build last decision store
     last_decision_store = LastDecisionStore()
@@ -106,7 +137,7 @@ async def async_setup_recommendation(
         policy_service=policy_service,
         scene_applier=scene_applier,
         scene_registry=scene_registry,
-        update_interval=timedelta(seconds=60),
+        update_interval=timedelta(seconds=15),
     )
 
     # Start the coordinator

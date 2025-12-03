@@ -93,17 +93,13 @@ class RecommendationCoordinator(DataUpdateCoordinator[dict[str, Decision | None]
     async def _async_update_data(self) -> dict[str, Decision | None]:
         """Fetch data and make recommendations for all rooms."""
         try:
-            # Build context by fetching from all providers in parallel
+            # Build context by fetching from all providers.
+            # We currently run providers sequentially so that each provider
+            # can build on the context produced by the previous ones
+            # (e.g. schedule, sun, presence all merged into one HomeContext).
             context = HomeContext()
-
-            # Fetch from providers in parallel
-            fetch_tasks = [provider.fetch(context) for provider in self.providers]
-            contexts = await asyncio.gather(*fetch_tasks)
-
-            # Merge contexts (providers return updated context)
-            # For now, just use the last one since they modify in place
-            # In the future, we could have a proper merge strategy
-            context = contexts[-1] if contexts else context
+            for provider in self.providers:
+                context = await provider.fetch(context)
 
             # Store context snapshot
             self._context = context

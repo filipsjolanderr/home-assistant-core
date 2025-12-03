@@ -11,13 +11,13 @@ class WeightsAndParams:
 
     strategy_weights: dict[str, float] = field(default_factory=dict)
     """Weights for each strategy (strategy_id -> weight)."""
-    inertia_boost: float = 0.2
+    inertia_boost: float = 0.0
     """Boost score for previously selected scene (hysteresis)."""
-    switch_delta_min: float = 0.1
+    switch_delta_min: float = 0.0
     """Minimum score delta required to switch scenes."""
-    min_dwell_seconds: int = 300
+    min_dwell_seconds: int = 0
     """Minimum time (seconds) before allowing scene switch."""
 
     def get_strategy_weight(self, strategy_id: str) -> float:
-        """Get weight for a strategy, defaulting to 1.0."""
+        """Get weight for a strategy, defaulting to 1.0 if not configured."""
         return self.strategy_weights.get(strategy_id, 1.0)

@@ -15,7 +15,7 @@ async def test_async_setup_recommendation_initialization(
 
     assert coordinator is not None
     assert coordinator.bridge == mock_bridge_v2
-    assert coordinator.update_interval == timedelta(seconds=60)
+    assert coordinator.update_interval == timedelta(seconds=15)
     # We currently expect two providers: sun, schedule and presence
     assert len(coordinator.providers) == 3
     provider_ids = {provider.provider_id for provider in coordinator.providers}
@@ -33,11 +33,11 @@ async def test_async_setup_recommendation_weights_configuration(
     coordinator = await async_setup_recommendation(hass, mock_bridge_v2)
 
     weights = coordinator.policy_service.weights
-    assert weights.strategy_weights["time_of_day"] == 1.0
-    assert weights.strategy_weights["home_arrival"] == 1.0
-    assert weights.inertia_boost == 0.2
-    assert weights.switch_delta_min == 0.1
-    assert weights.min_dwell_seconds == 300
+    assert weights.strategy_weights["time_of_day"] == 0.5
+    assert weights.strategy_weights["home_arrival"] == 2.0
+    assert weights.inertia_boost == 0.0
+    assert weights.switch_delta_min == 0.0
+    assert weights.min_dwell_seconds == 0
 
 
 async def test_async_setup_recommendation_strategies(

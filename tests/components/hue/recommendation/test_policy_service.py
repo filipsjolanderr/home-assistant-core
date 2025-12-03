@@ -2,10 +2,14 @@
 
 from datetime import UTC, datetime, timedelta
 
+import pytest
+
 from homeassistant.components.hue.recommendation.context import (
     Constraints,
     HomeContext,
     LightingContext,
+    PresenceContext,
+    ScheduleContext,
     SunContext,
 )
 from homeassistant.components.hue.recommendation.policy.last_decision import (
@@ -13,6 +17,15 @@ from homeassistant.components.hue.recommendation.policy.last_decision import (
 )
 from homeassistant.components.hue.recommendation.policy.policy_service import (
     PolicyService,
+)
+from homeassistant.components.hue.recommendation.policy.strategies.home_arrival_strategy import (
+    HomeArrivalStrategy,
+)
+from homeassistant.components.hue.recommendation.policy.strategies.time_of_day_strategy import (
+    TimeOfDayStrategy,
+)
+from homeassistant.components.hue.recommendation.policy.strategies.weekly_schedule_strategy import (
+    WeeklyScheduleStrategy,
 )
 from homeassistant.components.hue.recommendation.policy.strategies.strategy import (
     IStrategy,
@@ -224,3 +237,109 @@ async def test_policy_service_constraints() -> None:
 
     # For MVP, constraints don't filter yet, so should still work
     assert decision is not None
+
+
+async def test_policy_service_multiple_strategies_arrival_wins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test PolicyService combines multiple strategies and arrival can dominate."""
+    time_strategy = TimeOfDayStrategy()
+    arrival_strategy = HomeArrivalStrategy()
+
+    # Avoid depending on real catalog contents so scores are predictable.
+    def fake_get_scenes_for_time_of_day(period: str) -> list[str]:
+        return []
+
+    monkeypatch.setattr(
+        "homeassistant.components.hue.recommendation.policy.strategies.time_of_day_strategy.get_scenes_for_time_of_day",
+        fake_get_scenes_for_time_of_day,
+    )
+
+    weights = WeightsAndParams(
+        strategy_weights={
+            "time_of_day": 0.5,
+            "home_arrival": 1.0,
+        }
+    )
+    last_decision = LastDecisionStore()
+
+    service = PolicyService([time_strategy, arrival_strategy], weights, last_decision)
+    context = HomeContext(
+        sun=SunContext(elevation=45.0),
+        presence=PresenceContext(is_anyone_home=True, state="1"),
+    )
+
+    candidates = ["day_scene", "Welcome Home"]
+
+    decision = await service.decide(context, candidates)
+
+    assert decision is not None
+    # Even though time_of_day prefers "day_scene", the higher weight for
+    # home_arrival and its strong match for "Welcome Home" should win.
+    assert decision.scene_id == "Welcome Home"
+    assert "time_of_day" in decision.strategy_scores
+    assert "home_arrival" in decision.strategy_scores
+    assert decision.strategy_scores["home_arrival"]["Welcome Home"] == 1.0
+
+
+async def test_policy_service_multiple_strategies_all_active(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test PolicyService with time-of-day, weekly schedule and arrival strategies."""
+    time_strategy = TimeOfDayStrategy()
+    schedule_strategy = WeeklyScheduleStrategy()
+    arrival_strategy = HomeArrivalStrategy()
+
+    # Make catalog-driven keywords deterministic for this test.
+    def fake_get_scenes_for_time_of_day(period: str) -> list[str]:
+        return []
+
+    def fake_get_scenes_for_schedule_period(period: str) -> list[str]:
+        return []
+
+    monkeypatch.setattr(
+        "homeassistant.components.hue.recommendation.policy.strategies.time_of_day_strategy.get_scenes_for_time_of_day",
+        fake_get_scenes_for_time_of_day,
+    )
+    monkeypatch.setattr(
+        "homeassistant.components.hue.recommendation.policy.strategies.weekly_schedule_strategy.get_scenes_for_schedule_period",
+        fake_get_scenes_for_schedule_period,
+    )
+
+    weights = WeightsAndParams(
+        strategy_weights={
+            "time_of_day": 0.5,
+            "weekly_schedule": 0.5,
+            "home_arrival": 1.0,
+        }
+    )
+    last_decision = LastDecisionStore()
+
+    service = PolicyService(
+        [time_strategy, schedule_strategy, arrival_strategy],
+        weights,
+        last_decision,
+    )
+    context = HomeContext(
+        sun=SunContext(elevation=-5.0),
+        schedule=ScheduleContext(
+            active_period="evening",
+            available_periods=["evening"],
+            has_active_schedule=True,
+        ),
+        presence=PresenceContext(is_anyone_home=True, state="1"),
+    )
+
+    candidates = ["Evening Relax", "Welcome Home"]
+
+    decision = await service.decide(context, candidates)
+
+    assert decision is not None
+    # Evening-focused strategies (time_of_day + weekly_schedule) should
+    # together outweigh arrival and prefer the evening scene.
+    assert decision.scene_id == "Evening Relax"
+    assert set(decision.strategy_scores) == {
+        "time_of_day",
+        "weekly_schedule",
+        "home_arrival",
+    }

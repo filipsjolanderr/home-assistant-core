@@ -1,7 +1,9 @@
 """Schedule provider for Home Assistant schedule entities."""
+
 from __future__ import annotations
 
 from dataclasses import replace
+import logging
 from typing import TYPE_CHECKING
 
 from ..home_context import HomeContext, ScheduleContext
@@ -10,11 +12,15 @@ from .provider import IContextProvider
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class ScheduleProvider(IContextProvider):
     """Provides access to Home Assistant schedule entities."""
 
-    def __init__(self, hass: HomeAssistant, schedule_prefix: str = "schedule.hue_") -> None:
+    def __init__(
+        self, hass: HomeAssistant, schedule_prefix: str = "schedule.hue_"
+    ) -> None:
         """Initialize the schedule provider."""
         self._hass = hass
         self._schedule_prefix = schedule_prefix
@@ -37,6 +43,13 @@ class ScheduleProvider(IContextProvider):
         active = self._get_active_period()
         available = self._get_available_periods()
 
+        _LOGGER.debug(
+            "ScheduleProvider: active_period=%s, available_periods=%s using prefix=%s",
+            active,
+            available,
+            self._schedule_prefix,
+        )
+
         schedule_context = ScheduleContext(
             active_period=active,
             available_periods=available,
@@ -52,6 +65,9 @@ class ScheduleProvider(IContextProvider):
             state = self._hass.states.get(entity_id)
 
             if state and state.state == "on":
+                _LOGGER.debug(
+                    "ScheduleProvider: active schedule %s=%s", entity_id, state.state
+                )
                 return period
 
         return None

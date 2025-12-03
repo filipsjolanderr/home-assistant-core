@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+
 from ...context import HomeContext
 from homeassistant.components.hue.recommendation.scene_catalog import (
     get_scenes_for_time_of_day,
 )
 from .strategy import IStrategy, StrategyResult
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class TimeOfDayStrategy(IStrategy):
@@ -28,6 +32,12 @@ class TimeOfDayStrategy(IStrategy):
         """Score candidates based on sun elevation."""
         elevation = context.sun.elevation
         scene_scores: dict[str, float] = {}
+
+        _LOGGER.debug(
+            "TimeOfDayStrategy: scoring %s with sun elevation %.2f",
+            candidates,
+            elevation,
+        )
 
         # Determine which scene type to prefer based on sun elevation
         if elevation < 0:
@@ -73,6 +83,12 @@ class TimeOfDayStrategy(IStrategy):
                 "evening",
             ]
 
+        _LOGGER.debug(
+            "TimeOfDayStrategy: preferred_prefixes=%s, fallback_prefixes=%s",
+            preferred_prefixes,
+            fallback_prefixes,
+        )
+
         # Score candidates based on name matching
         for scene_id in candidates:
             score = 0.0
@@ -96,6 +112,8 @@ class TimeOfDayStrategy(IStrategy):
                 score = 0.1
 
             scene_scores[scene_id] = score
+
+        _LOGGER.debug("TimeOfDayStrategy: scene_scores=%s", scene_scores)
 
         return StrategyResult(
             scene_scores=scene_scores,

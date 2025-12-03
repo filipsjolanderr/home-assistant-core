@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import random
 
 from ..context import Constraints, HomeContext
 from .candidate_scenes import CandidateScenes
@@ -41,6 +42,14 @@ class PolicyService:
         Returns:
             Decision object, or None if no valid candidates
         """
+        _LOGGER.debug(
+            "Starting decision with context: sun_elevation=%.2f, "
+            "schedule_active=%s, presence_anyone_home=%s",
+            context.sun.elevation,
+            context.schedule.active_period,
+            context.presence.is_anyone_home,
+        )
+
         # Enumerate candidates if not provided
         if candidates is None:
             candidates = CandidateScenes.enumerate(context)
@@ -65,6 +74,12 @@ class PolicyService:
         for strategy in self.strategies:
             result = await strategy.score(context, filtered_candidates)
             strategy_results[strategy.strategy_id] = result
+            _LOGGER.debug(
+                "Strategy %s scores: %s (metadata=%s)",
+                strategy.strategy_id,
+                result.scene_scores,
+                result.metadata,
+            )
 
         # Calculate weighted scores
         weighted_scores: dict[str, float] = {}
@@ -88,16 +103,32 @@ class PolicyService:
                 total_score += self.weights.inertia_boost
 
             weighted_scores[scene_id] = total_score
+            _LOGGER.debug(
+                "Aggregated score for scene %s: total=%.3f (contributions=%s)",
+                scene_id,
+                total_score,
+                {
+                    sid: contributions_val
+                    for sid, contributions_val in contributions.items()
+                    if sid.endswith(f":{scene_id}")
+                },
+            )
 
         # Select best scene
         if not weighted_scores:
             return None
 
-        # Sort by score (descending)
-        sorted_scenes = sorted(
-            weighted_scores.items(), key=lambda x: x[1], reverse=True
-        )
-        best_scene_id, best_score = sorted_scenes[0]
+        # Find the maximum score and randomly pick among all scenes that
+        # share that score so we do not always favor the first one in the
+        # list when scores are tied.
+        max_score = max(weighted_scores.values())
+        top_scenes = [
+            scene_id
+            for scene_id, score in weighted_scores.items()
+            if score == max_score
+        ]
+        best_scene_id = random.choice(top_scenes)
+        best_score = max_score
 
         # Check if we should switch (hysteresis check)
         if self.last_decision.scene_id:

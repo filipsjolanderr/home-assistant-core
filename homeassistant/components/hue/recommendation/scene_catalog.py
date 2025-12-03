@@ -77,6 +77,20 @@ TIME_OF_DAY_TO_SET_NAMES: Final[Mapping[str, list[str]]] = {
     "night": ["Serenity", "Peaceful", "Cozy"],
 }
 
+# Sets that work well as "arrival" / "welcome home" scenes. These are
+# deliberately chosen from existing time-of-day buckets so that concrete
+# scene names continue to live only in this JSON-driven catalog.
+ARRIVAL_SET_NAMES: Final[list[str]] = [
+    "Refreshing",
+    "Pure",
+    "Luxurious",
+]
+
+
+def get_scenes_for_arrival() -> list[str]:
+    """Return scene names that are suitable for home arrival."""
+    return _flatten_sets(ARRIVAL_SET_NAMES)
+
 
 def get_scenes_for_schedule_period(period: str) -> list[str]:
     """Return scene names that are suitable for a schedule *period*."""

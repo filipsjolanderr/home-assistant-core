@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+
 from ...context import HomeContext
+from homeassistant.components.hue.recommendation.scene_catalog import (
+    get_scenes_for_arrival,
+)
 from .strategy import IStrategy, StrategyResult
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class HomeArrivalStrategy(IStrategy):
@@ -23,11 +30,29 @@ class HomeArrivalStrategy(IStrategy):
         """
         is_anyone_home = context.presence.is_anyone_home
 
+        _LOGGER.debug(
+            "HomeArrivalStrategy: scoring %s with is_anyone_home=%s (state=%s)",
+            candidates,
+            is_anyone_home,
+            context.presence.state,
+        )
+
         scene_scores: dict[str, float] = {}
 
-        # If transition away->home, prefer scenes that look like 'arrival' or 'welcome'
+        # If transition away->home, prefer catalog-backed arrival scenes and
+        # names that look like 'arrival' or 'welcome'.
         if is_anyone_home:
-            preferred_keywords = ["arrival", "welcome", "home", "arrive"]
+            preferred_keywords = [
+                # Generic arrival-style keywords that match user scenes
+                "arrival",
+                "welcome",
+                "home",
+                "arrive",
+            ]
+            # Also treat catalog scenes that are part of arrival-friendly
+            # sets as preferred, so concrete scene names still live in the
+            # JSON catalog.
+            preferred_keywords.extend(name.lower() for name in get_scenes_for_arrival())
             for scene_id in candidates:
                 lowered = scene_id.lower()
                 score = 0.0
@@ -42,6 +67,8 @@ class HomeArrivalStrategy(IStrategy):
             # Neutral scoring so other strategies decide
             for scene_id in candidates:
                 scene_scores[scene_id] = 0.0
+
+        _LOGGER.debug("HomeArrivalStrategy: scene_scores=%s", scene_scores)
 
         return StrategyResult(
             scene_scores=scene_scores,

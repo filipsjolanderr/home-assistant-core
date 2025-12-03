@@ -12,9 +12,9 @@ def test_weights_and_params_defaults() -> None:
     weights = WeightsAndParams()
 
     assert weights.strategy_weights == {}
-    assert weights.inertia_boost == 0.2
-    assert weights.switch_delta_min == 0.1
-    assert weights.min_dwell_seconds == 300
+    assert weights.inertia_boost == 0.0
+    assert weights.switch_delta_min == 0.0
+    assert weights.min_dwell_seconds == 0
 
 
 def test_weights_and_params_custom_values() -> None:
@@ -35,9 +35,7 @@ def test_weights_and_params_custom_values() -> None:
 
 def test_weights_and_params_get_strategy_weight() -> None:
     """Test get_strategy_weight returns correct weight."""
-    weights = WeightsAndParams(
-        strategy_weights={"strategy1": 2.0, "strategy2": 1.5}
-    )
+    weights = WeightsAndParams(strategy_weights={"strategy1": 2.0, "strategy2": 1.5})
 
     assert weights.get_strategy_weight("strategy1") == 2.0
     assert weights.get_strategy_weight("strategy2") == 1.5

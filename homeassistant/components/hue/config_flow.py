@@ -30,10 +30,20 @@ from .const import (
     CONF_ALLOW_HUE_GROUPS,
     CONF_ALLOW_UNREACHABLE,
     CONF_IGNORE_AVAILABILITY,
+    CONF_RECOMMENDATION_INERTIA_BOOST,
+    CONF_RECOMMENDATION_MIN_DWELL_SECONDS,
+    CONF_RECOMMENDATION_SWITCH_DELTA_MIN,
+    CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
+    CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
+    CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
     DEFAULT_ALLOW_HUE_GROUPS,
     DEFAULT_ALLOW_UNREACHABLE,
+    DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
+    DEFAULT_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
+    DEFAULT_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
     DOMAIN,
 )
+from .recommendation.policy.weights import WeightsAndParams
 from .errors import CannotConnect
 
 LOGGER = logging.getLogger(__name__)
@@ -384,7 +394,12 @@ class HueV2OptionsFlowHandler(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage Hue options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            # Merge new options into existing ones so we don't drop settings
+            # that are managed elsewhere (e.g. recommendation auto-apply).
+            return self.async_create_entry(
+                title="",
+                data={**self.config_entry.options, **user_input},
+            )
 
         # create a list of Hue device ID's that the user can select
         # to ignore availability status
@@ -411,6 +426,50 @@ class HueV2OptionsFlowHandler(OptionsFlow):
                         CONF_IGNORE_AVAILABILITY,
                         default=cur_ids,
                     ): cv.multi_select(dev_ids),
+                    # Strategy weights
+                    vol.Optional(
+                        CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
+                        default=self.config_entry.options.get(
+                            CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
+                            DEFAULT_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
+                        ),
+                    ): vol.Coerce(float),
+                    vol.Optional(
+                        CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
+                        default=self.config_entry.options.get(
+                            CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
+                            DEFAULT_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
+                        ),
+                    ): vol.Coerce(float),
+                    vol.Optional(
+                        CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
+                        default=self.config_entry.options.get(
+                            CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
+                            DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
+                        ),
+                    ): vol.Coerce(float),
+                    # Hysteresis parameters
+                    vol.Optional(
+                        CONF_RECOMMENDATION_INERTIA_BOOST,
+                        default=self.config_entry.options.get(
+                            CONF_RECOMMENDATION_INERTIA_BOOST,
+                            WeightsAndParams().inertia_boost,
+                        ),
+                    ): vol.Coerce(float),
+                    vol.Optional(
+                        CONF_RECOMMENDATION_SWITCH_DELTA_MIN,
+                        default=self.config_entry.options.get(
+                            CONF_RECOMMENDATION_SWITCH_DELTA_MIN,
+                            WeightsAndParams().switch_delta_min,
+                        ),
+                    ): vol.Coerce(float),
+                    vol.Optional(
+                        CONF_RECOMMENDATION_MIN_DWELL_SECONDS,
+                        default=self.config_entry.options.get(
+                            CONF_RECOMMENDATION_MIN_DWELL_SECONDS,
+                            WeightsAndParams().min_dwell_seconds,
+                        ),
+                    ): vol.Coerce(int),
                 }
             ),
         )

@@ -25,6 +25,20 @@ ATTR_DYNAMIC = "dynamic"
 CONF_RECOMMENDATION_AUTO_APPLY = "recommendation_auto_apply"
 CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL = "recommendation_auto_apply_global"
 
+CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY = "recommendation_weight_time_of_day"
+CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE = "recommendation_weight_weekly_schedule"
+CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL = "recommendation_weight_home_arrival"
+
+CONF_RECOMMENDATION_INERTIA_BOOST = "recommendation_inertia_boost"
+CONF_RECOMMENDATION_SWITCH_DELTA_MIN = "recommendation_switch_delta_min"
+CONF_RECOMMENDATION_MIN_DWELL_SECONDS = "recommendation_min_dwell_seconds"
+
+# Default per-strategy weight when not configured via options.
+DEFAULT_RECOMMENDATION_STRATEGY_WEIGHT = 1.0
+DEFAULT_RECOMMENDATION_WEIGHT_TIME_OF_DAY = 0.5
+DEFAULT_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE = 1.0
+DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL = 2.0
+
 
 # V1 API SPECIFIC CONSTANTS ##################
 

@@ -176,3 +176,10 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
                 coordinator.set_global_auto_apply(enabled)
             else:
                 coordinator.set_auto_apply_enabled(self.room.id, enabled)
+
+        # Immediately push updated state to the frontend so the toggle
+        # reflects the new value without waiting for a full refresh.
+        # Only do this once the entity has been added to Home Assistant
+        # (test instances may not be attached to a platform yet).
+        if self.platform is not None and self.entity_id:
+            self.async_write_ha_state()

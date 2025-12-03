@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
+
 from ...context import HomeContext
 from homeassistant.components.hue.recommendation.scene_catalog import (
     get_scenes_for_schedule_period,
 )
 from .strategy import IStrategy, StrategyResult
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class WeeklyScheduleStrategy(IStrategy):
@@ -59,9 +63,22 @@ class WeeklyScheduleStrategy(IStrategy):
         # Get active period from context
         active_period = context.schedule.active_period
 
+        _LOGGER.debug(
+            "WeeklyScheduleStrategy: scoring %s with active_period=%s, "
+            "available_periods=%s, has_active_schedule=%s",
+            candidates,
+            active_period,
+            context.schedule.available_periods,
+            context.schedule.has_active_schedule,
+        )
+
         if not active_period:
             # No schedule active - return neutral scores, let other strategies decide
             scene_scores = dict.fromkeys(candidates, 0.5)
+            _LOGGER.debug(
+                "WeeklyScheduleStrategy: no active period, neutral scores=%s",
+                scene_scores,
+            )
             return StrategyResult(
                 scene_scores=scene_scores,
                 metadata={
@@ -98,6 +115,12 @@ class WeeklyScheduleStrategy(IStrategy):
             name.lower() for name in get_scenes_for_schedule_period(active_period)
         )
 
+        _LOGGER.debug(
+            "WeeklyScheduleStrategy: active_period=%s, preferred_keywords=%s",
+            active_period,
+            preferred_keywords,
+        )
+
         for scene_id in candidates:
             scene_name_lower = scene_id.lower()
             score = 0.1  # Default score
@@ -119,5 +142,11 @@ class WeeklyScheduleStrategy(IStrategy):
                         break
 
             scene_scores[scene_id] = score
+
+        _LOGGER.debug(
+            "WeeklyScheduleStrategy: scene_scores for period %s: %s",
+            active_period,
+            scene_scores,
+        )
 
         return scene_scores

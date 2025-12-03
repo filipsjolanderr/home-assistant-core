@@ -51,3 +51,4 @@ async def test_update_listener_reloads_for_other_options(hass: HomeAssistant) ->
     await _update_listener(hass, entry)  # type: ignore[arg-type]
 
     hass.config_entries.async_reload.assert_awaited_once_with(entry.entry_id)
+
