@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 
 from ..bridge import HueBridge
 from . import scene_catalog
+from .context.providers.presence_provider import PresenceProvider
 from .context.providers.provider import IContextProvider
 from .context.providers.schedule_provider import ScheduleProvider
 from .context.providers.sun_provider import SunProvider
@@ -15,7 +16,12 @@ from .coordinator import RecommendationCoordinator, SceneApplier
 from .coordinator.scene_registry import SceneRegistry
 from .policy import Decision, PolicyService
 from .policy.last_decision import LastDecisionStore
-from .policy.strategies import IStrategy, TimeOfDayStrategy, WeeklyScheduleStrategy
+from .policy.strategies import (
+    HomeArrivalStrategy,
+    IStrategy,
+    TimeOfDayStrategy,
+    WeeklyScheduleStrategy,
+)
 from .policy.weights import WeightsAndParams
 
 # Default weights and parameters for recommendation engine
@@ -33,8 +39,8 @@ __all__ = [
     "PolicyService",
     "RecommendationCoordinator",
     "SceneApplier",
-    "scene_catalog",
     "async_setup_recommendation",
+    "scene_catalog",
 ]
 
 
@@ -54,10 +60,18 @@ async def async_setup_recommendation(
         Initialized recommendation coordinator
     """
     # Build context providers
-    providers: list[IContextProvider] = [SunProvider(hass), ScheduleProvider(hass)]
+    providers: list[IContextProvider] = [
+        SunProvider(hass),
+        ScheduleProvider(hass),
+        PresenceProvider(hass),
+    ]
 
     # Build strategies
-    strategies: list[IStrategy] = [TimeOfDayStrategy(), WeeklyScheduleStrategy()]
+    strategies: list[IStrategy] = [
+        TimeOfDayStrategy(),
+        WeeklyScheduleStrategy(),
+        HomeArrivalStrategy(),
+    ]
 
     # Build weights and params - auto-populate strategy weights from registered strategies
     strategy_weights = {

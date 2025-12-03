@@ -39,6 +39,16 @@ class SunContext:
 
 
 @dataclass
+class PresenceContext:
+    """Presence and occupancy context."""
+
+    is_anyone_home: bool = False
+    """True if at least one is in the home zone."""
+    state: str = "0"
+    """Presence state: 0 if no one detected in zone.home, else > 0"""
+
+
+@dataclass
 class ScheduleContext:
     """Schedule-related context."""
 
@@ -64,3 +74,5 @@ class HomeContext:
     """Constraints affecting scene selection."""
     metadata: dict[str, Any] = field(default_factory=dict)
     """Additional metadata from providers."""
+    presence: PresenceContext = field(default_factory=PresenceContext)
+    """Presence context."""

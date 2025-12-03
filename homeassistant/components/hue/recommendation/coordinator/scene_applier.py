@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from aiohue.v2.controllers.scenes import ScenesController
 from aiohue.v2.models.smart_scene import SmartScene
 
 from ...bridge import HueBridge
