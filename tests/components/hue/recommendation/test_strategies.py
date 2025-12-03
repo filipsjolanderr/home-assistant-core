@@ -2,9 +2,16 @@
 
 import pytest
 
-from homeassistant.components.hue.recommendation.context import HomeContext, SunContext
+from homeassistant.components.hue.recommendation.context import (
+    HomeContext,
+    ScheduleContext,
+    SunContext,
+)
 from homeassistant.components.hue.recommendation.policy.strategies.time_of_day_strategy import (
     TimeOfDayStrategy,
+)
+from homeassistant.components.hue.recommendation.policy.strategies.weekly_schedule_strategy import (
+    WeeklyScheduleStrategy,
 )
 
 
@@ -81,3 +88,38 @@ async def test_time_of_day_strategy_case_insensitive() -> None:
     assert result.scene_scores["DAY_SCENE"] == 1.0
     assert result.scene_scores["Morning_Scene"] == 0.5
     assert result.scene_scores["EvEnInG_ScEnE"] == 0.5
+
+
+async def test_weekly_schedule_uses_scene_catalog(monkeypatch: pytest.MonkeyPatch) -> None:
+    """WeeklyScheduleStrategy should use scene names from scene_catalog."""
+    strategy = WeeklyScheduleStrategy()
+
+    # Provide a controlled catalog for the "morning" period so we do not
+    # depend on the actual JSON contents beyond API shape.
+    def fake_get_scenes_for_schedule_period(period: str) -> list[str]:
+        if period == "morning":
+            return ["Blossom"]
+        return []
+
+    monkeypatch.setattr(
+        "homeassistant.components.hue.recommendation.policy.strategies.weekly_schedule_strategy.get_scenes_for_schedule_period",
+        fake_get_scenes_for_schedule_period,
+    )
+
+    context = HomeContext(
+        schedule=ScheduleContext(
+            active_period="morning",
+            available_periods=["morning", "work", "evening", "night"],
+            has_active_schedule=True,
+        )
+    )
+
+    candidates = ["Blossom", "work_scene"]
+
+    result = await strategy.score(context, candidates)
+
+    # Blossom should receive the top score because it comes from the
+    # catalog for the active period, even though the name is not part
+    # of the generic PERIOD_KEYWORDS list.
+    assert result.scene_scores["Blossom"] == 1.0
+    assert result.scene_scores["work_scene"] <= 1.0

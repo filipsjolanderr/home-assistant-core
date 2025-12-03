@@ -1,0 +1,146 @@
+{
+    "sets": [
+        {
+            "name": "Defaults",
+            "scenes": [
+                "Rest",
+                "Relax",
+                "Read",
+                "Concentrate",
+                "Energize",
+                "Cool bright",
+                "Bright",
+                "Dimmed",
+                "Nightlight"
+            ]
+        },
+        {
+            "name": "Refreshing",
+            "scenes": [
+                "Blossom",
+                "Crocus",
+                "Precious",
+                "Narcissa"
+            ]
+        },
+        {
+            "name": "Cozy",
+            "scenes": [
+                "Rolling hills",
+                "Warm embrace",
+                "Dreamy dusk",
+                "Honolulu",
+                "Savanna sunset",
+                "Golden pond",
+                "Ruby glow",
+                "Tropical twilight"
+            ]
+        },
+        {
+            "name": "Party vibes",
+            "scenes": [
+                "Miami",
+                "Cancun",
+                "Rio",
+                "Chinatown",
+                "Ibiza",
+                "Osaka",
+                "Tokyo",
+                "Motown",
+                "Fairfax"
+            ]
+        },
+        {
+            "name": "Serenity",
+            "scenes": [
+                "Galaxy",
+                "Starlight",
+                "Blood moon",
+                "Arctic aurora",
+                "Moonlight",
+                "Nebula"
+            ]
+        },
+        {
+            "name": "Dreamy",
+            "scenes": [
+                "Still waters",
+                "Adrift",
+                "Pensive",
+                "Majestic morning",
+                "Sundown",
+                "Blue lagoon",
+                "Palm Beach",
+                "Lake Placid"
+            ]
+        },
+        {
+            "name": "Peaceful",
+            "scenes": [
+                "Mountain breeze",
+                "Lake mist",
+                "Ocean dawn",
+                "Frosty dawn",
+                "Sunday morning",
+                "Emerald isle",
+                "Spring blossom"
+            ]
+        },
+        {
+            "name": "Sunrise",
+            "scenes": [
+                "Beginnings",
+                "First light",
+                "Horizon",
+                "Valley dawn",
+                "Sunflare"
+            ]
+        },
+        {
+            "name": "Luxurious",
+            "scenes": [
+                "Emerald flutter",
+                "Memento",
+                "Resplendent",
+                "Scarlet dream"
+            ]
+        },
+        {
+            "name": "Pure",
+            "scenes": [
+                "Amethyst valley",
+                "Misty ridge",
+                "Hazy days",
+                "Midsummer sun",
+                "Autumn gold",
+                "Spring lake",
+                "Winter mountain",
+                "Midwinter"
+            ]
+        },
+        {
+            "name": "Lush",
+            "scenes": [
+                "Amber bloom",
+                "Lily",
+                "Painted sky",
+                "Winter beauty",
+                "Orange fields",
+                "Forest adventure",
+                "Blue Planet",
+                "Meriete"
+            ]
+        },
+        {
+            "name": "Futuristic",
+            "scenes": [
+                "Soho",
+                "Vapor wave",
+                "Magneto",
+                "Tyrell",
+                "Disturbia",
+                "Hal"
+            ]
+        }
+    ]
+}

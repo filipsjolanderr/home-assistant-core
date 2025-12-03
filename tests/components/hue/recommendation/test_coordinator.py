@@ -1,29 +1,25 @@
 """Tests for recommendation coordinator."""
 
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
-import pytest
 from aiohue.v2.controllers.groups import Room, Zone
+import pytest
 
-from homeassistant.components.hue.recommendation.coordinator import (
-    RecommendationCoordinator,
-)
 from homeassistant.components.hue.recommendation.context import HomeContext
 from homeassistant.components.hue.recommendation.context.providers import (
     IContextProvider,
 )
-from homeassistant.components.hue.recommendation.policy import PolicyService
+from homeassistant.components.hue.recommendation.coordinator import (
+    RecommendationCoordinator,
+)
+from homeassistant.components.hue.recommendation.coordinator.scene_applier import (
+    SceneApplier,
+)
+from homeassistant.components.hue.recommendation.coordinator.scene_registry import (
+    SceneRegistry,
+)
 from homeassistant.components.hue.recommendation.policy.decision import Decision
-from homeassistant.components.hue.recommendation.policy.last_decision import (
-    LastDecisionStore,
-)
-from homeassistant.components.hue.recommendation.policy.weights import (
-    WeightsAndParams,
-)
-from homeassistant.components.hue.recommendation.coordinator.scene_applier import SceneApplier
 from homeassistant.core import HomeAssistant
-
-from tests.components.hue.conftest import create_mock_bridge
 
 
 class MockProvider(IContextProvider):
@@ -141,6 +137,7 @@ async def test_coordinator_update_data(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
 
@@ -186,6 +183,7 @@ async def test_coordinator_enumerates_scenes(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
 
@@ -224,6 +222,7 @@ async def test_coordinator_auto_apply_disabled(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
     # Auto-apply is disabled by default (empty dict)
@@ -262,6 +261,7 @@ async def test_coordinator_auto_apply_enabled(
             room.id = "test_room_1"
             return room
         return None
+
     scenes_controller.get_group = get_group
 
     mock_bridge_v2.api.groups = mock_groups_controller
@@ -285,6 +285,7 @@ async def test_coordinator_auto_apply_enabled(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
 
@@ -295,6 +296,64 @@ async def test_coordinator_auto_apply_enabled(
     await coordinator._async_update_data()
 
     # Should have called scene applier
+    assert mock_bridge_v2.async_request_call.called
+
+
+async def test_coordinator_global_auto_apply_enabled(
+    hass: HomeAssistant,
+    mock_bridge_v2: Mock,
+    mock_groups_controller: Mock,
+) -> None:
+    """Test global auto-apply applies to all rooms."""
+    scene1 = Mock()
+    scene1.id = "scene1"
+
+    scenes_controller = Mock()
+    scenes_list = [scene1]
+    scenes_controller.__iter__ = lambda self: iter(scenes_list)
+
+    scene_recall = AsyncMock()
+    scenes_controller.scene = Mock()
+    scenes_controller.scene.recall = scene_recall
+
+    def get_group(scene_id: str) -> Mock | None:
+        if scene_id == "scene1":
+            room = Mock()
+            room.id = "test_room_2"
+            return room
+        return None
+
+    scenes_controller.get_group = get_group
+
+    mock_bridge_v2.api.groups = mock_groups_controller
+    mock_bridge_v2.api.scenes = scenes_controller
+    mock_bridge_v2.async_request_call = AsyncMock()
+
+    provider = MockProvider("test")
+    decision = Decision(
+        scene_id="scene1",
+        score=1.0,
+        confidence=0.8,
+        contributions={},
+        strategy_scores={},
+    )
+    policy_service = MockPolicyService(decision)
+    scene_applier = SceneApplier(mock_bridge_v2)
+
+    coordinator = RecommendationCoordinator(
+        hass=hass,
+        bridge=mock_bridge_v2,
+        providers=[provider],
+        policy_service=policy_service,  # type: ignore[arg-type]
+        scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
+        update_interval=60,
+    )
+
+    coordinator.set_global_auto_apply(True)
+
+    await coordinator._async_update_data()
+
     assert mock_bridge_v2.async_request_call.called
 
 
@@ -319,6 +378,7 @@ async def test_coordinator_auto_apply_no_decision(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
     coordinator.set_auto_apply_enabled("test_room_1", True)
@@ -359,6 +419,7 @@ async def test_coordinator_apply_recommendation(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
     # Set data as dict with decision for test_room_1
@@ -387,6 +448,7 @@ async def test_coordinator_apply_recommendation_no_decision(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
     coordinator.data = {"test_room_1": None}
@@ -410,6 +472,7 @@ async def test_coordinator_get_decision(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
 
@@ -455,6 +518,7 @@ async def test_coordinator_auto_apply_enabled_methods(
         providers=[provider],
         policy_service=policy_service,  # type: ignore[arg-type]
         scene_applier=scene_applier,
+        scene_registry=SceneRegistry(),
         update_interval=60,
     )
 
