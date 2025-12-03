@@ -16,8 +16,11 @@ async def test_async_setup_recommendation_initialization(
     assert coordinator is not None
     assert coordinator.bridge == mock_bridge_v2
     assert coordinator.update_interval == timedelta(seconds=60)
-    assert len(coordinator.providers) == 1
-    assert coordinator.providers[0].provider_id == "sun"
+    # We currently expect two providers: sun and schedule
+    assert len(coordinator.providers) == 2
+    provider_ids = {provider.provider_id for provider in coordinator.providers}
+    assert "sun" in provider_ids
+    assert "schedule" in provider_ids
     assert coordinator.policy_service is not None
     assert coordinator.scene_applier is not None
 
@@ -42,5 +45,7 @@ async def test_async_setup_recommendation_strategies(
     coordinator = await async_setup_recommendation(hass, mock_bridge_v2)
 
     strategies = coordinator.policy_service.strategies
-    assert len(strategies) == 1
-    assert strategies[0].strategy_id == "time_of_day"
+    strategy_ids = {strategy.strategy_id for strategy in strategies}
+    # Both time_of_day and weekly_schedule strategies should be configured
+    assert "time_of_day" in strategy_ids
+    assert "weekly_schedule" in strategy_ids

@@ -31,8 +31,7 @@ class IStrategy(ABC):
     async def score(
         self, context: HomeContext, candidates: list[str]
     ) -> StrategyResult:
-        """
-        Score candidate scenes based on context.
+        """Score candidate scenes based on context.
 
         Args:
             context: Current home context

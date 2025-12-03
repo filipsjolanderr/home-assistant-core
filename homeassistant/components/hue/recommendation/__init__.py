@@ -7,12 +7,15 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 
 from ..bridge import HueBridge
+from . import scene_catalog
 from .context.providers.provider import IContextProvider
+from .context.providers.schedule_provider import ScheduleProvider
 from .context.providers.sun_provider import SunProvider
 from .coordinator import RecommendationCoordinator, SceneApplier
+from .coordinator.scene_registry import SceneRegistry
 from .policy import Decision, PolicyService
 from .policy.last_decision import LastDecisionStore
-from .policy.strategies import IStrategy, TimeOfDayStrategy
+from .policy.strategies import IStrategy, TimeOfDayStrategy, WeeklyScheduleStrategy
 from .policy.weights import WeightsAndParams
 
 # Default weights and parameters for recommendation engine
@@ -30,6 +33,7 @@ __all__ = [
     "PolicyService",
     "RecommendationCoordinator",
     "SceneApplier",
+    "scene_catalog",
     "async_setup_recommendation",
 ]
 
@@ -50,10 +54,10 @@ async def async_setup_recommendation(
         Initialized recommendation coordinator
     """
     # Build context providers
-    providers: list[IContextProvider] = [SunProvider(hass)]
+    providers: list[IContextProvider] = [SunProvider(hass), ScheduleProvider(hass)]
 
     # Build strategies
-    strategies: list[IStrategy] = [TimeOfDayStrategy()]
+    strategies: list[IStrategy] = [TimeOfDayStrategy(), WeeklyScheduleStrategy()]
 
     # Build weights and params - auto-populate strategy weights from registered strategies
     strategy_weights = {
@@ -76,8 +80,9 @@ async def async_setup_recommendation(
         last_decision=last_decision_store,
     )
 
-    # Build scene applier
+    # Build scene applier and scene registry
     scene_applier = SceneApplier(bridge)
+    scene_registry = SceneRegistry()
 
     # Build coordinator (manages all rooms)
     coordinator = RecommendationCoordinator(
@@ -86,6 +91,7 @@ async def async_setup_recommendation(
         providers=providers,
         policy_service=policy_service,
         scene_applier=scene_applier,
+        scene_registry=scene_registry,
         update_interval=timedelta(seconds=60),
     )
 

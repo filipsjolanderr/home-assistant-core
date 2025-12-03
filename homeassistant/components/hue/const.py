@@ -20,6 +20,12 @@ ATTR_TRANSITION = "transition"
 ATTR_DYNAMIC = "dynamic"
 
 
+# Recommendation engine constants ##################
+
+CONF_RECOMMENDATION_AUTO_APPLY = "recommendation_auto_apply"
+CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL = "recommendation_auto_apply_global"
+
+
 # V1 API SPECIFIC CONSTANTS ##################
 
 GROUP_TYPE_LIGHT_GROUP = "LightGroup"

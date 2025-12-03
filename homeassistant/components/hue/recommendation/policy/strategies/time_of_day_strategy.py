@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from ...context import HomeContext
+from homeassistant.components.hue.recommendation.scene_catalog import (
+    get_scenes_for_time_of_day,
+)
 from .strategy import IStrategy, StrategyResult
 
 
 class TimeOfDayStrategy(IStrategy):
-    """
-    MVP strategy: recommends 3 scenes based on sun position.
+    """MVP strategy: recommends 3 scenes based on sun position.
 
     - Morning scene: sun elevation < 10 degrees (dawn/morning)
     - Day scene: sun elevation >= 10 degrees (daytime)
@@ -30,16 +32,46 @@ class TimeOfDayStrategy(IStrategy):
         # Determine which scene type to prefer based on sun elevation
         if elevation < 0:
             # Night/evening - prefer evening scenes
-            preferred_prefixes = ["evening", "night", "dusk"]
-            fallback_prefixes = ["day", "morning"]
+            preferred_prefixes = [
+                "evening",
+                "night",
+                "dusk",
+            ]
+            preferred_prefixes.extend(
+                name.lower() for name in get_scenes_for_time_of_day("night")
+            )
+            fallback_prefixes = [
+                "day",
+                "morning",
+            ]
         elif elevation < 10:
             # Morning/dawn - prefer morning scenes
-            preferred_prefixes = ["morning", "dawn", "wake"]
-            fallback_prefixes = ["day", "evening"]
+            preferred_prefixes = [
+                "morning",
+                "dawn",
+                "wake",
+            ]
+            preferred_prefixes.extend(
+                name.lower() for name in get_scenes_for_time_of_day("morning")
+            )
+            fallback_prefixes = [
+                "day",
+                "evening",
+            ]
         else:
             # Daytime - prefer day scenes
-            preferred_prefixes = ["day", "bright", "work"]
-            fallback_prefixes = ["morning", "evening"]
+            preferred_prefixes = [
+                "day",
+                "bright",
+                "work",
+            ]
+            preferred_prefixes.extend(
+                name.lower() for name in get_scenes_for_time_of_day("day")
+            )
+            fallback_prefixes = [
+                "morning",
+                "evening",
+            ]
 
         # Score candidates based on name matching
         for scene_id in candidates:

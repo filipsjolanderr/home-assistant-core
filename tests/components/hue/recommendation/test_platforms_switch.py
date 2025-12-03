@@ -1,8 +1,7 @@
 """Tests for Hue recommendation switch platform."""
 
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import Mock
 
-import pytest
 from aiohue.v2.controllers.groups import Room
 from aiohue.v2.models.resource import ResourceTypes
 
@@ -15,7 +14,6 @@ from homeassistant.components.hue.recommendation.platforms.switch import (
 from homeassistant.core import HomeAssistant
 
 from tests.components.hue.conftest import create_mock_bridge
-from tests.components.hue.recommendation.conftest import mock_hue_bridge_v2
 
 
 async def test_async_setup_entry_v1_bridge(hass: HomeAssistant) -> None:
@@ -202,6 +200,27 @@ async def test_switch_is_on_home_room_global(
     assert entity.is_on is True
 
 
+async def test_switch_is_on_regular_room_global_override(
+    hass: HomeAssistant, mock_hue_bridge_v2: Mock
+) -> None:
+    """Test global setting forces regular room switches on."""
+    bridge = mock_hue_bridge_v2
+    await bridge.api.load_test_data([])
+    bridge.config_entry = Mock()
+    bridge.config_entry.options = {
+        CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL: True,
+        CONF_RECOMMENDATION_AUTO_APPLY: {"room1": False},
+    }
+
+    room = Mock(spec=Room)
+    room.id = "room1"
+    room.type = ResourceTypes.ROOM
+
+    entity = HueRecommendationSwitchEntity(bridge, room)
+
+    assert entity.is_on is True
+
+
 async def test_switch_turn_on_regular_room(
     hass: HomeAssistant, mock_hue_bridge_v2: Mock
 ) -> None:
@@ -237,9 +256,7 @@ async def test_switch_turn_off_regular_room(
     # Initialize bridge with test data
     await bridge.api.load_test_data([])
     bridge.config_entry = Mock()
-    bridge.config_entry.options = {
-        CONF_RECOMMENDATION_AUTO_APPLY: {"room1": True}
-    }
+    bridge.config_entry.options = {CONF_RECOMMENDATION_AUTO_APPLY: {"room1": True}}
 
     room = Mock(spec=Room)
     room.id = "room1"
@@ -293,9 +310,7 @@ async def test_switch_turn_off_home_room(
     # Initialize bridge with test data
     await bridge.api.load_test_data([])
     bridge.config_entry = Mock()
-    bridge.config_entry.options = {
-        CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL: True
-    }
+    bridge.config_entry.options = {CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL: True}
 
     room = Mock(spec=Room)
     room.id = "home"
@@ -339,3 +354,28 @@ async def test_switch_async_added_to_hass(
 
     # Subscribe should be called (may be called multiple times by base class)
     assert subscribe_mock.call_count >= 1
+
+
+async def test_switch_async_added_global_sets_coordinator(
+    hass: HomeAssistant, mock_hue_bridge_v2: Mock
+) -> None:
+    """Home room should update global auto-apply state on add."""
+    bridge = mock_hue_bridge_v2
+    await bridge.api.load_test_data([])
+    bridge.config_entry = Mock()
+    bridge.config_entry.options = {CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL: True}
+
+    room = Mock(spec=Room)
+    room.id = "home"
+    room.type = ResourceTypes.BRIDGE_HOME
+
+    coordinator = Mock()
+    bridge.recommendation_coordinator = coordinator
+
+    entity = HueRecommendationSwitchEntity(bridge, room)
+    entity.hass = hass
+    entity.async_on_remove = Mock()
+
+    await entity.async_added_to_hass()
+
+    coordinator.set_global_auto_apply.assert_called_once_with(True)
