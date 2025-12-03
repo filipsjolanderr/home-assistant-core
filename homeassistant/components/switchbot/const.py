@@ -26,6 +26,7 @@ class SupportedModels(StrEnum):
     CONTACT = "contact"
     PLUG = "plug"
     MOTION = "motion"
+    PRESENCE_SENSOR = "presence_sensor"
     HUMIDIFIER = "humidifier"
     LOCK = "lock"
     LOCK_PRO = "lock_pro"
@@ -59,6 +60,7 @@ class SupportedModels(StrEnum):
     GARAGE_DOOR_OPENER = "garage_door_opener"
     CLIMATE_PANEL = "climate_panel"
     SMART_THERMOSTAT_RADIATOR = "smart_thermostat_radiator"
+    S20_VACUUM = "s20_vacuum"
 
 
 CONNECTABLE_SUPPORTED_MODEL_TYPES = {
@@ -79,6 +81,7 @@ CONNECTABLE_SUPPORTED_MODEL_TYPES = {
     SwitchbotModel.CIRCULATOR_FAN: SupportedModels.CIRCULATOR_FAN,
     SwitchbotModel.K20_VACUUM: SupportedModels.K20_VACUUM,
     SwitchbotModel.S10_VACUUM: SupportedModels.S10_VACUUM,
+    SwitchbotModel.S20_VACUUM: SupportedModels.S20_VACUUM,
     SwitchbotModel.K10_VACUUM: SupportedModels.K10_VACUUM,
     SwitchbotModel.K10_PRO_VACUUM: SupportedModels.K10_PRO_VACUUM,
     SwitchbotModel.K10_PRO_COMBO_VACUUM: SupportedModels.K10_PRO_COMBO_VACUUM,
@@ -106,6 +109,7 @@ NON_CONNECTABLE_SUPPORTED_MODEL_TYPES = {
     SwitchbotModel.METER_PRO_C: SupportedModels.HYGROMETER_CO2,
     SwitchbotModel.CONTACT_SENSOR: SupportedModels.CONTACT,
     SwitchbotModel.MOTION_SENSOR: SupportedModels.MOTION,
+    SwitchbotModel.PRESENCE_SENSOR: SupportedModels.PRESENCE_SENSOR,
     SwitchbotModel.LEAK: SupportedModels.LEAK,
     SwitchbotModel.REMOTE: SupportedModels.REMOTE,
     SwitchbotModel.HUBMINI_MATTER: SupportedModels.HUBMINI_MATTER,

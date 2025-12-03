@@ -49,6 +49,18 @@ class PresenceContext:
 
 
 @dataclass
+class ScheduleContext:
+    """Schedule-related context."""
+
+    active_period: str | None = None
+    """Currently active schedule period (morning, work, evening, night)."""
+    available_periods: list[str] = field(default_factory=list)
+    """List of schedule periods that are configured."""
+    has_active_schedule: bool = False
+    """Whether any schedule is currently active."""
+
+
+@dataclass
 class HomeContext:
     """Complete home context for recommendation decisions."""
 
@@ -56,6 +68,8 @@ class HomeContext:
     """Lighting context."""
     sun: SunContext = field(default_factory=SunContext)
     """Sun context."""
+    schedule: ScheduleContext = field(default_factory=ScheduleContext)
+    """Schedule context."""
     constraints: Constraints = field(default_factory=Constraints)
     """Constraints affecting scene selection."""
     metadata: dict[str, Any] = field(default_factory=dict)

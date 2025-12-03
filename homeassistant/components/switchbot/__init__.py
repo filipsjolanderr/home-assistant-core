@@ -46,6 +46,7 @@ PLATFORMS_BY_TYPE = {
     SupportedModels.HYGROMETER_CO2.value: [Platform.SENSOR],
     SupportedModels.CONTACT.value: [Platform.BINARY_SENSOR, Platform.SENSOR],
     SupportedModels.MOTION.value: [Platform.BINARY_SENSOR, Platform.SENSOR],
+    SupportedModels.PRESENCE_SENSOR.value: [Platform.BINARY_SENSOR, Platform.SENSOR],
     SupportedModels.HUMIDIFIER.value: [Platform.HUMIDIFIER, Platform.SENSOR],
     SupportedModels.LOCK.value: [
         Platform.BINARY_SENSOR,
@@ -75,6 +76,7 @@ PLATFORMS_BY_TYPE = {
     SupportedModels.HUBMINI_MATTER.value: [Platform.SENSOR],
     SupportedModels.CIRCULATOR_FAN.value: [Platform.FAN, Platform.SENSOR],
     SupportedModels.S10_VACUUM.value: [Platform.VACUUM, Platform.SENSOR],
+    SupportedModels.S20_VACUUM.value: [Platform.VACUUM, Platform.SENSOR],
     SupportedModels.K10_VACUUM.value: [Platform.VACUUM, Platform.SENSOR],
     SupportedModels.K10_PRO_VACUUM.value: [Platform.VACUUM, Platform.SENSOR],
     SupportedModels.K10_PRO_COMBO_VACUUM.value: [Platform.VACUUM, Platform.SENSOR],
@@ -123,6 +125,7 @@ CLASS_BY_DEVICE = {
     SupportedModels.ROLLER_SHADE.value: switchbot.SwitchbotRollerShade,
     SupportedModels.CIRCULATOR_FAN.value: switchbot.SwitchbotFan,
     SupportedModels.S10_VACUUM.value: switchbot.SwitchbotVacuum,
+    SupportedModels.S20_VACUUM.value: switchbot.SwitchbotVacuum,
     SupportedModels.K10_VACUUM.value: switchbot.SwitchbotVacuum,
     SupportedModels.K10_PRO_VACUUM.value: switchbot.SwitchbotVacuum,
     SupportedModels.K10_PRO_COMBO_VACUUM.value: switchbot.SwitchbotVacuum,

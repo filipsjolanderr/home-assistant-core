@@ -5,6 +5,7 @@ from .home_context import (
     HomeContext,
     LightingContext,
     PresenceContext,
+    ScheduleContext,
     SunContext,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "HomeContext",
     "LightingContext",
     "PresenceContext",
+    "ScheduleContext",
     "SunContext",
 ]

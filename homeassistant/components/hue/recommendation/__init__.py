@@ -7,13 +7,21 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 
 from ..bridge import HueBridge
+from . import scene_catalog
 from .context.providers.presence_provider import PresenceProvider
 from .context.providers.provider import IContextProvider
+from .context.providers.schedule_provider import ScheduleProvider
 from .context.providers.sun_provider import SunProvider
 from .coordinator import RecommendationCoordinator, SceneApplier
+from .coordinator.scene_registry import SceneRegistry
 from .policy import Decision, PolicyService
 from .policy.last_decision import LastDecisionStore
-from .policy.strategies import HomeArrivalStrategy, IStrategy, TimeOfDayStrategy
+from .policy.strategies import (
+    HomeArrivalStrategy,
+    IStrategy,
+    TimeOfDayStrategy,
+    WeeklyScheduleStrategy,
+)
 from .policy.weights import WeightsAndParams
 
 # Default weights and parameters for recommendation engine
@@ -32,6 +40,7 @@ __all__ = [
     "RecommendationCoordinator",
     "SceneApplier",
     "async_setup_recommendation",
+    "scene_catalog",
 ]
 
 
@@ -51,10 +60,18 @@ async def async_setup_recommendation(
         Initialized recommendation coordinator
     """
     # Build context providers
-    providers: list[IContextProvider] = [SunProvider(hass), PresenceProvider(hass)]
+    providers: list[IContextProvider] = [
+        SunProvider(hass),
+        ScheduleProvider(hass),
+        PresenceProvider(hass),
+    ]
 
     # Build strategies
-    strategies: list[IStrategy] = [TimeOfDayStrategy(), HomeArrivalStrategy()]
+    strategies: list[IStrategy] = [
+        TimeOfDayStrategy(),
+        WeeklyScheduleStrategy(),
+        HomeArrivalStrategy(),
+    ]
 
     # Build weights and params - auto-populate strategy weights from registered strategies
     strategy_weights = {
@@ -77,8 +94,9 @@ async def async_setup_recommendation(
         last_decision=last_decision_store,
     )
 
-    # Build scene applier
+    # Build scene applier and scene registry
     scene_applier = SceneApplier(bridge)
+    scene_registry = SceneRegistry()
 
     # Build coordinator (manages all rooms)
     coordinator = RecommendationCoordinator(
@@ -87,6 +105,7 @@ async def async_setup_recommendation(
         providers=providers,
         policy_service=policy_service,
         scene_applier=scene_applier,
+        scene_registry=scene_registry,
         update_interval=timedelta(seconds=60),
     )
 
