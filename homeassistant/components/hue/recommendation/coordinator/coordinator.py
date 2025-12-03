@@ -86,14 +86,6 @@ class RecommendationCoordinator(DataUpdateCoordinator[dict[str, Decision | None]
             # Build context by fetching from all providers in parallel
             context = HomeContext()
 
-            # Expose previous presence summary to strategies/providers so
-            # they can detect transitions (away -> home, home -> away).
-            if self._context and getattr(self._context, "presence", None):
-                context.metadata["previous_presence"] = {
-                    "is_anyone_home": self._context.presence.is_anyone_home,
-                    "present_entities": list(self._context.presence.present_entities),
-                }
-
             # Fetch from providers in parallel
             fetch_tasks = [provider.fetch(context) for provider in self.providers]
             contexts = await asyncio.gather(*fetch_tasks)

@@ -19,18 +19,14 @@ class HomeArrivalStrategy(IStrategy):
     ) -> StrategyResult:
         """Score candidates based on arrival transition.
 
-        Detect an arrival when previous presence reported no one home and the
-        current presence reports at least one entity in state 'home'.
+        Detect an arrival when is_anyone_home bool is changed to True.
         """
-        prev = context.metadata.get("previous_presence", {})
-        prev_any_home = prev.get("is_anyone_home", False)
-        curr_any_home = context.presence.is_anyone_home
+        is_anyone_home = context.presence.is_anyone_home
 
         scene_scores: dict[str, float] = {}
 
         # If transition away->home, prefer scenes that look like 'arrival' or 'welcome'
-        if not prev_any_home and curr_any_home:
-            # TODO: Look up the relevant scene names from Hue
+        if is_anyone_home:
             preferred_keywords = ["arrival", "welcome", "home", "arrive"]
             for scene_id in candidates:
                 lowered = scene_id.lower()
@@ -49,5 +45,5 @@ class HomeArrivalStrategy(IStrategy):
 
         return StrategyResult(
             scene_scores=scene_scores,
-            metadata={"prev_any_home": prev_any_home, "curr_any_home": curr_any_home},
+            metadata={"is_anyone_home": is_anyone_home},
         )

@@ -43,13 +43,9 @@ class PresenceContext:
     """Presence and occupancy context."""
 
     is_anyone_home: bool = False
-    """True if at least one tracked entity is home."""
-    present_entities: list[str] = field(default_factory=list)
-    """List of entity_ids currently detected at home."""
-    absent_entities: list[str] = field(default_factory=list)
-    """List of entity_ids currently not at home."""
-    last_changed: dict[str, str] = field(default_factory=dict)
-    """Map entity_id -> ISO timestamp of last state change (string), optional."""
+    """True if at least one is in the home zone."""
+    state: str = "0"
+    """Presence state: 0 if no one detected in zone.home, else > 0"""
 
 
 @dataclass
