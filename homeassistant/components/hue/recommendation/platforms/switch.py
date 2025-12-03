@@ -14,12 +14,13 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from ...bridge import HueBridge, HueConfigEntry
-from ...const import DOMAIN
+from ...const import (
+    CONF_RECOMMENDATION_AUTO_APPLY,
+    CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL,
+    DOMAIN,
+)
 from ...v2.entity import HueBaseEntity
 from ..coordinator import RecommendationCoordinator
-
-CONF_RECOMMENDATION_AUTO_APPLY = "recommendation_auto_apply"
-CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL = "recommendation_auto_apply_global"
 
 
 async def async_setup_entry(
@@ -112,7 +113,10 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
         coordinator = self._coordinator
         if coordinator:
             enabled = self.is_on
-            coordinator.set_auto_apply_enabled(self.room.id, enabled)
+            if self._is_home_room:
+                coordinator.set_global_auto_apply(enabled)
+            else:
+                coordinator.set_auto_apply_enabled(self.room.id, enabled)
 
         # Subscribe to room updates
         self.async_on_remove(
@@ -129,10 +133,13 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
         options = self.bridge.config_entry.options
         auto_apply = options.get(CONF_RECOMMENDATION_AUTO_APPLY, {})
 
+        global_enabled = options.get(CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL, False)
+
         if self._is_home_room:
-            # Check global setting first, then per-room
-            if CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL in options:
-                return options[CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL]
+            return global_enabled
+
+        if global_enabled:
+            return True
 
         return auto_apply.get(self.room.id, False)
 
@@ -165,4 +172,7 @@ class HueRecommendationSwitchEntity(HueBaseEntity, SwitchEntity):
         # Update coordinator state
         coordinator = self._coordinator
         if coordinator:
-            coordinator.set_auto_apply_enabled(self.room.id, enabled)
+            if self._is_home_room:
+                coordinator.set_global_auto_apply(enabled)
+            else:
+                coordinator.set_auto_apply_enabled(self.room.id, enabled)

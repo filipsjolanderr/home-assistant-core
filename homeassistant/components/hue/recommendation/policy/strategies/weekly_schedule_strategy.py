@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from ...context import HomeContext
+from homeassistant.components.hue.recommendation.scene_catalog import (
+    get_scenes_for_schedule_period,
+)
 from .strategy import IStrategy, StrategyResult
 
 
@@ -14,12 +17,34 @@ class WeeklyScheduleStrategy(IStrategy):
     - schedule.hue_night
     """
 
-    # Map schedule periods to scene keywords
+    # Map schedule periods to generic keywords
     PERIOD_KEYWORDS = {
-        "morning": ["morning", "dawn", "wake", "breakfast"],
-        "work": ["work", "focus", "concentrate", "day", "bright"],
-        "evening": ["evening", "relax", "dinner", "sunset"],
-        "night": ["night", "sleep", "dim", "bedtime", "dusk"],
+        "morning": [
+            "morning",
+            "dawn",
+            "wake",
+            "breakfast",
+        ],
+        "work": [
+            "work",
+            "focus",
+            "concentrate",
+            "day",
+            "bright",
+        ],
+        "evening": [
+            "evening",
+            "relax",
+            "dinner",
+            "sunset",
+        ],
+        "night": [
+            "night",
+            "sleep",
+            "dim",
+            "bedtime",
+            "dusk",
+        ],
     }
 
     @property
@@ -36,7 +61,7 @@ class WeeklyScheduleStrategy(IStrategy):
 
         if not active_period:
             # No schedule active - return neutral scores, let other strategies decide
-            scene_scores = {scene_id: 0.5 for scene_id in candidates}
+            scene_scores = dict.fromkeys(candidates, 0.5)
             return StrategyResult(
                 scene_scores=scene_scores,
                 metadata={
@@ -45,7 +70,7 @@ class WeeklyScheduleStrategy(IStrategy):
                     "available_periods": context.schedule.available_periods,
                 },
             )
-            
+
         scene_scores = self._score_scenes(candidates, active_period)
 
         return StrategyResult(
@@ -64,7 +89,14 @@ class WeeklyScheduleStrategy(IStrategy):
     ) -> dict[str, float]:
         """Score candidate scenes based on the active period."""
         scene_scores: dict[str, float] = {}
-        preferred_keywords = self.PERIOD_KEYWORDS.get(active_period, [])
+        preferred_keywords = list(self.PERIOD_KEYWORDS.get(active_period, []))
+
+        # Augment keywords with scenes mapped from the static JSON for
+        # this schedule period. This ensures concrete scene names only
+        # live in the JSON, not in strategy code.
+        preferred_keywords.extend(
+            name.lower() for name in get_scenes_for_schedule_period(active_period)
+        )
 
         for scene_id in candidates:
             scene_name_lower = scene_id.lower()

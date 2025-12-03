@@ -20,7 +20,11 @@ from homeassistant.const import CONF_API_KEY, CONF_API_VERSION, CONF_HOST, Platf
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers import aiohttp_client
 
-from .const import DOMAIN
+from .const import (
+    CONF_RECOMMENDATION_AUTO_APPLY,
+    CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL,
+    DOMAIN,
+)
 from .v1.sensor_base import SensorManager
 from .v2.device import async_setup_devices
 from .v2.hue_event import async_setup_hue_events
@@ -70,6 +74,18 @@ class HueBridge:
             self.api = HueBridgeV2(self.host, app_key)
         # store (this) bridge object in hass data
         self.config_entry.runtime_data = self
+        # Track options that should trigger a reload when they change.
+        # Recommendation auto-apply options are intentionally ignored so that
+        # toggling recommendation switches does not reload the integration.
+        ignored_option_keys: set[str] = {
+            CONF_RECOMMENDATION_AUTO_APPLY,
+            CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL,
+        }
+        self._non_recommendation_options: dict[str, Any] = {
+            key: value
+            for key, value in self.config_entry.options.items()
+            if key not in ignored_option_keys
+        }
 
     @property
     def host(self) -> str:
@@ -191,7 +207,38 @@ class HueBridge:
 
 
 async def _update_listener(hass: core.HomeAssistant, entry: HueConfigEntry) -> None:
-    """Handle ConfigEntry options update."""
+    """Handle ConfigEntry options update.
+
+    We reload the config entry if any non-recommendation options changed.
+    Recommendation auto-apply options are used only by the recommendation
+    engine and should not trigger a full integration reload, since that
+    would briefly make the integration unavailable when users toggle the
+    auto-apply switch.
+    """
+    bridge = getattr(entry, "runtime_data", None)
+
+    if bridge is not None and hasattr(bridge, "config_entry"):
+        ignored_option_keys: set[str] = {
+            CONF_RECOMMENDATION_AUTO_APPLY,
+            CONF_RECOMMENDATION_AUTO_APPLY_GLOBAL,
+        }
+        non_recommendation_options = {
+            key: value
+            for key, value in entry.options.items()
+            if key not in ignored_option_keys
+        }
+
+        previous_options = getattr(
+            bridge, "_non_recommendation_options", non_recommendation_options
+        )
+
+        # Update stored options on the bridge so we can compare next time
+        bridge._non_recommendation_options = non_recommendation_options
+
+        # If only recommendation options changed, skip reload
+        if previous_options == non_recommendation_options:
+            return
+
     await hass.config_entries.async_reload(entry.entry_id)
 
 
