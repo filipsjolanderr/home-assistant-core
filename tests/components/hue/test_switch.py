@@ -20,7 +20,7 @@ async def test_switch(
     # there shouldn't have been any requests at this point
     assert len(mock_bridge_v2.mock_requests) == 0
     # 4 entities should be created from test data
-    assert len(hass.states.async_all()) == 4
+    assert len(hass.states.async_all()) == 6
 
     # test config switch to enable/disable motion sensor
     test_entity = hass.states.get("switch.hue_motion_sensor_motion_sensor_enabled")

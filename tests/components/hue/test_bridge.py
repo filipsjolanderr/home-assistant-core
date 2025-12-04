@@ -65,8 +65,10 @@ async def test_bridge_setup_v2(hass: HomeAssistant, mock_api_v2: Mock) -> None:
     assert len(mock_forward.mock_calls) == 1
     forward_entries = set(mock_forward.mock_calls[0][1][1])
     assert forward_entries == {
-        "light",
         "binary_sensor",
+        "button",
+        "event",
+        "light",
         "event",
         "sensor",
         "switch",

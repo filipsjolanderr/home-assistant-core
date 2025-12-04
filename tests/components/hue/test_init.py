@@ -53,7 +53,7 @@ async def test_unload_entry(hass: HomeAssistant, mock_bridge_setup) -> None:
     entry.add_to_hass(hass)
 
     assert await async_setup_component(hass, hue.DOMAIN, {}) is True
-    assert len(mock_bridge_setup.mock_calls) == 1
+    assert mock_bridge_setup.async_initialize_bridge.await_count == 1
 
     entry.runtime_data = mock_bridge_setup
 

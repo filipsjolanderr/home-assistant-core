@@ -28,7 +28,7 @@ async def test_sensors(
     # there shouldn't have been any requests at this point
     assert len(mock_bridge_v2.mock_requests) == 0
     # 7 entities should be created from test data
-    assert len(hass.states.async_all()) == 7
+    assert len(hass.states.async_all()) == 9
 
     # test temperature sensor
     sensor = hass.states.get("sensor.hue_motion_sensor_temperature")

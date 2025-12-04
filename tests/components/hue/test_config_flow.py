@@ -570,6 +570,18 @@ async def test_options_flow_v2(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"] == {
         const.CONF_IGNORE_AVAILABILITY: [mock_dev_id],
+        const.CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY: (
+            const.DEFAULT_RECOMMENDATION_WEIGHT_TIME_OF_DAY
+        ),
+        const.CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE: (
+            const.DEFAULT_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE
+        ),
+        const.CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL: (
+            const.DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL
+        ),
+        const.CONF_RECOMMENDATION_INERTIA_BOOST: 0.0,
+        const.CONF_RECOMMENDATION_SWITCH_DELTA_MIN: 0.0,
+        const.CONF_RECOMMENDATION_MIN_DWELL_SECONDS: 0,
     }
 
 
