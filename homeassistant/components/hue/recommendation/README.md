@@ -46,7 +46,7 @@ Makes scene selection decisions based on context:
   - **Minimum dwell time**: Enforces time threshold before allowing switches
   - **Score delta threshold**: Requires significant improvement to override the current scene
 
-#### Scene Catalog (`scene_catalog.py`)
+#### Scene Catalog (`coordinator/scene_catalog.py`)
 Central repository for all Hue scene definitions:
 
 - **`STATIC_SCENE_SETS`**: Loaded from `hue_scenes.json`, organized by mood/theme
@@ -54,7 +54,7 @@ Central repository for all Hue scene definitions:
   - `SCHEDULE_PERIOD_TO_SET_NAMES`: Maps schedule periods to appropriate scene sets
   - `TIME_OF_DAY_TO_SET_NAMES`: Maps sun-based periods to scene sets
   - `ARRIVAL_SET_NAMES`: Defines welcoming arrival scenes
-- **Helper functions**: 
+- **Helper functions**:
   - `get_scenes_for_arrival()`: Returns arrival-appropriate scene names
   - `get_scenes_for_schedule_period()`: Returns scenes for a given schedule period
   - `get_scenes_for_time_of_day()`: Returns scenes for sun-based time periods
@@ -225,7 +225,7 @@ for strategy in strategies:
 Scores combined with configurable weights:
 ```python
 weighted_score = sum(
-    strategy_score * weight 
+    strategy_score * weight
     for strategy_id, strategy_score in strategy_scores.items()
 )
 ```
@@ -254,7 +254,7 @@ class CustomProvider(IContextProvider):
     @property
     def provider_id(self) -> str:
         return "custom"
-    
+
     async def fetch(self, context: HomeContext) -> HomeContext:
         # Add custom data to context
         context.metadata["custom_data"] = await self._fetch_data()
@@ -267,16 +267,16 @@ class CustomStrategy(IStrategy):
     @property
     def strategy_id(self) -> str:
         return "custom"
-    
+
     async def score(
-        self, 
-        context: HomeContext, 
+        self,
+        context: HomeContext,
         candidates: list[str]
     ) -> StrategyResult:
         scene_scores = {}
         for scene in candidates:
             scene_scores[scene] = self._calculate_score(scene, context)
-        
+
         return StrategyResult(
             scene_scores=scene_scores,
             metadata={"reason": "custom logic"}
@@ -300,7 +300,7 @@ Edit `coordinator/hue_scenes.json`:
 }
 ```
 
-Then reference in `scene_catalog.py`:
+Then reference in `coordinator/scene_catalog.py`:
 ```python
 SCHEDULE_PERIOD_TO_SET_NAMES = {
     "morning": ["Sunrise", "Pure", "My Custom Set"],

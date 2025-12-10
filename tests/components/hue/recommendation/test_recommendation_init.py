@@ -7,6 +7,7 @@ from homeassistant.components.hue.const import (
     CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
     CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
     CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
+    CONF_RECOMMENDATION_UPDATE_INTERVAL,
 )
 from homeassistant.components.hue.recommendation import async_setup_recommendation
 from homeassistant.config_entries import ConfigEntry
@@ -70,6 +71,38 @@ async def test_async_setup_recommendation_weights_from_options(
     assert weights.strategy_weights["time_of_day"] == 2.0
     assert weights.strategy_weights["weekly_schedule"] == 0.5
     assert weights.strategy_weights["home_arrival"] == 3.0
+
+
+async def test_async_setup_recommendation_update_interval_from_options(
+    hass: HomeAssistant, mock_bridge_v2: Mock
+) -> None:
+    """Test async_setup_recommendation uses the configured update interval."""
+    mock_entry = Mock(spec=ConfigEntry)
+    mock_entry.options = {CONF_RECOMMENDATION_UPDATE_INTERVAL: 30}
+    mock_entry.state = None
+    mock_entry.entry_id = "test-entry-id"
+    mock_entry.async_on_unload = Mock()
+    mock_bridge_v2.config_entry = mock_entry
+
+    coordinator = await async_setup_recommendation(hass, mock_bridge_v2)
+
+    assert coordinator.update_interval == timedelta(seconds=30)
+
+
+async def test_async_setup_recommendation_update_interval_minimum(
+    hass: HomeAssistant, mock_bridge_v2: Mock
+) -> None:
+    """Test update interval is clamped to a sensible minimum."""
+    mock_entry = Mock(spec=ConfigEntry)
+    mock_entry.options = {CONF_RECOMMENDATION_UPDATE_INTERVAL: 1}
+    mock_entry.state = None
+    mock_entry.entry_id = "test-entry-id"
+    mock_entry.async_on_unload = Mock()
+    mock_bridge_v2.config_entry = mock_entry
+
+    coordinator = await async_setup_recommendation(hass, mock_bridge_v2)
+
+    assert coordinator.update_interval == timedelta(seconds=5)
 
 
 async def test_async_setup_recommendation_strategies(

@@ -8,15 +8,17 @@ from homeassistant.core import HomeAssistant
 
 from ..bridge import HueBridge
 from ..const import (
+    CONF_RECOMMENDATION_UPDATE_INTERVAL,
     CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
     CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
     CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
     DEFAULT_RECOMMENDATION_STRATEGY_WEIGHT,
+    DEFAULT_RECOMMENDATION_UPDATE_INTERVAL,
     DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
     DEFAULT_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
     DEFAULT_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
 )
-from . import scene_catalog
+from .coordinator import scene_catalog
 from .context.providers.presence_provider import PresenceProvider
 from .context.providers.provider import IContextProvider
 from .context.providers.schedule_provider import ScheduleProvider
@@ -129,6 +131,19 @@ async def async_setup_recommendation(
     scene_applier = SceneApplier(bridge)
     scene_registry = SceneRegistry()
 
+    # Determine update interval
+    try:
+        update_interval_seconds = int(
+            config_options.get(
+                CONF_RECOMMENDATION_UPDATE_INTERVAL,
+                DEFAULT_RECOMMENDATION_UPDATE_INTERVAL,
+            )
+        )
+    except (TypeError, ValueError):
+        update_interval_seconds = DEFAULT_RECOMMENDATION_UPDATE_INTERVAL
+    else:
+        update_interval_seconds = max(update_interval_seconds, 5)
+
     # Build coordinator (manages all rooms)
     coordinator = RecommendationCoordinator(
         hass=hass,
@@ -137,7 +152,7 @@ async def async_setup_recommendation(
         policy_service=policy_service,
         scene_applier=scene_applier,
         scene_registry=scene_registry,
-        update_interval=timedelta(seconds=15),
+        update_interval=timedelta(seconds=update_interval_seconds),
     )
 
     # Start the coordinator

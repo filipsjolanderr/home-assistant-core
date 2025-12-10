@@ -3,9 +3,7 @@ from __future__ import annotations
 import logging
 
 from ...context import HomeContext
-from homeassistant.components.hue.recommendation.scene_catalog import (
-    get_scenes_for_schedule_period,
-)
+from ...coordinator.scene_catalog import get_scenes_for_schedule_period
 from .strategy import IStrategy, StrategyResult
 
 _LOGGER = logging.getLogger(__name__)

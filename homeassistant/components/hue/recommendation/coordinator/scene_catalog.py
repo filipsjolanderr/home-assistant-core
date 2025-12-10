@@ -15,7 +15,7 @@ from typing import Final
 
 def _load_static_scene_sets() -> dict[str, list[str]]:
     """Load static Hue scene sets from bundled JSON."""
-    path = Path(__file__).with_name("coordinator").joinpath("hue_scenes.json")
+    path = Path(__file__).with_name("hue_scenes.json")
     with path.open(encoding="utf-8") as fh:
         raw = json.load(fh)
 
@@ -100,3 +100,4 @@ def get_scenes_for_schedule_period(period: str) -> list[str]:
 def get_scenes_for_time_of_day(period: str) -> list[str]:
     """Return scene names suitable for a time-of-day bucket."""
     return _flatten_sets(list(TIME_OF_DAY_TO_SET_NAMES.get(period, ())))
+

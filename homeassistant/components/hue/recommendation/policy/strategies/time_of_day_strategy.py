@@ -5,9 +5,7 @@ from __future__ import annotations
 import logging
 
 from ...context import HomeContext
-from homeassistant.components.hue.recommendation.scene_catalog import (
-    get_scenes_for_time_of_day,
-)
+from ...coordinator.scene_catalog import get_scenes_for_time_of_day
 from .strategy import IStrategy, StrategyResult
 
 _LOGGER = logging.getLogger(__name__)

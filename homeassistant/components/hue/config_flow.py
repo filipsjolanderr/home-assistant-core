@@ -36,8 +36,10 @@ from .const import (
     CONF_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
     CONF_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
     CONF_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
+    CONF_RECOMMENDATION_UPDATE_INTERVAL,
     DEFAULT_ALLOW_HUE_GROUPS,
     DEFAULT_ALLOW_UNREACHABLE,
+    DEFAULT_RECOMMENDATION_UPDATE_INTERVAL,
     DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
     DEFAULT_RECOMMENDATION_WEIGHT_TIME_OF_DAY,
     DEFAULT_RECOMMENDATION_WEIGHT_WEEKLY_SCHEDULE,
@@ -448,6 +450,13 @@ class HueV2OptionsFlowHandler(OptionsFlow):
                             DEFAULT_RECOMMENDATION_WEIGHT_HOME_ARRIVAL,
                         ),
                     ): vol.Coerce(float),
+                    vol.Optional(
+                        CONF_RECOMMENDATION_UPDATE_INTERVAL,
+                        default=self.config_entry.options.get(
+                            CONF_RECOMMENDATION_UPDATE_INTERVAL,
+                            DEFAULT_RECOMMENDATION_UPDATE_INTERVAL,
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=5)),
                     # Hysteresis parameters
                     vol.Optional(
                         CONF_RECOMMENDATION_INERTIA_BOOST,
